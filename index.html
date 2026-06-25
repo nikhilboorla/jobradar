@@ -495,7 +495,8 @@ async function runSearch() {
   startProgress();
 
   try {
-    const apiKey = localStorage.getItem('jr_api_key')||'';
+    const rawKey = localStorage.getItem('jr_api_key')||'';
+    const apiKey = rawKey.replace(/[^\x20-\x7E]/g,'').trim();
     if (!apiKey) { throw new Error('Please enter your Anthropic API key in the yellow bar above.'); }
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST', headers: {'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-calls':'true'},
@@ -686,7 +687,8 @@ async function runSalary() {
   document.getElementById('salary-results').innerHTML = '';
   document.getElementById('salary-loading').style.display = 'block';
   try {
-    const apiKey = localStorage.getItem('jr_api_key')||'';
+    const rawKey = localStorage.getItem('jr_api_key')||'';
+    const apiKey = rawKey.replace(/[^\x20-\x7E]/g,'').trim();
     if (!apiKey) { throw new Error('Please enter your Anthropic API key in the yellow bar above.'); }
     const res = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-calls':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:3000,system:SAL_PROMPT,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:`Find 2025 salary for "${role}" in Dallas TX. Search levels.fyi, Glassdoor, LinkedIn, Indeed. Return only the JSON object.`}]})});
     if (!res.ok) throw new Error('API error '+res.status);
@@ -750,7 +752,8 @@ function renderSalary(data) {
 
 // ── INIT ───────────────────────────────────────────────────────────────────────
 function saveKey(val) {
-  localStorage.setItem('jr_api_key', val.trim());
+  const clean = val.replace(/[^\x20-\x7E]/g,'').trim();
+  localStorage.setItem('jr_api_key', clean);
   const st = document.getElementById('key-status');
   if (val.trim()) { st.textContent = '✅ Key saved'; st.style.color='#34d399'; }
   else { st.textContent = 'No key entered'; st.style.color='#475569'; }
