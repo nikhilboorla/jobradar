@@ -1,732 +1,737 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>JobRadar Pro — Nikhil Boorla · H1B · Dallas · AI Roles</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <style>html,body,#root{margin:0;padding:0;background:#030810;min-height:100vh}</style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>JobRadar Pro — H1B · AI · Dallas</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#030810;color:#e2e8f0;font-family:'DM Sans',sans-serif;min-height:100vh}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#030810}::-webkit-scrollbar-thumb{background:#1a3a5c;border-radius:3px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.fade{animation:fadeUp .3s ease both}
+.shimmer{background:linear-gradient(90deg,#0a1628 25%,#1a3a5c 50%,#0a1628 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px}
+.grid-bg{background-image:linear-gradient(rgba(6,182,212,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(6,182,212,.025) 1px,transparent 1px);background-size:44px 44px}
+/* HEADER */
+#header{border-bottom:1px solid rgba(6,182,212,.1);padding:14px 20px;background:linear-gradient(180deg,#07101f,transparent)}
+.header-inner{max-width:1060px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#06b6d4,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 0 16px rgba(6,182,212,.4);flex-shrink:0}
+.logo-title{font-size:16px;font-weight:700;letter-spacing:-.4px;background:linear-gradient(120deg,#f1f5f9,#06b6d4 55%,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.2}
+.logo-sub{font-size:9px;color:#1e3a5f;font-family:'Space Mono';letter-spacing:.5px;margin-top:1px}
+.header-badges{display:flex;gap:5px;flex-wrap:wrap}
+.hbadge{font-size:9px;padding:2px 7px;border-radius:20px;font-weight:600}
+.hbadge.no{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.15);color:#f87171}
+.hbadge.yes{background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.18);color:#34d399}
+/* PROGRESS BAR */
+#progress-bar{height:2px;background:#0a1628;display:none}
+#progress-fill{height:100%;width:0%;background:linear-gradient(90deg,#06b6d4,#a78bfa);transition:width .4s ease;box-shadow:0 0 6px rgba(6,182,212,.5)}
+/* NAV */
+#nav{border-bottom:1px solid rgba(255,255,255,.05);background:#050c18;padding:0 20px}
+.nav-inner{max-width:1060px;margin:0 auto;display:flex;gap:2px}
+.nav-btn{background:none;border:none;border-bottom:2px solid transparent;color:#475569;padding:11px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap}
+.nav-btn.active{border-bottom-color:#06b6d4;color:#06b6d4;font-weight:700}
+.nav-count{background:rgba(255,255,255,.08);color:#475569;border-radius:20px;padding:0 6px;font-size:10px;font-weight:700}
+.nav-btn.active .nav-count{background:#06b6d4;color:#000}
+/* MAIN */
+#main{max-width:1060px;margin:0 auto;padding:20px 18px}
+.tab-panel{display:none}.tab-panel.active{display:block}
+/* SEARCH PANEL */
+.search-box{background:linear-gradient(135deg,#09162b,#070f1e);border:1px solid rgba(6,182,212,.15);border-radius:14px;padding:18px 22px;margin-bottom:18px}
+.search-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr)) auto;gap:10px;align-items:end;margin-bottom:0}
+.field-label{font-size:9px;color:#1e3a5f;font-family:'Space Mono';letter-spacing:1px;margin-bottom:5px}
+.field-val{background:rgba(6,182,212,.04);border:1px solid rgba(6,182,212,.1);border-radius:8px;padding:8px 11px;font-size:11px;color:#7c95b4;display:flex;align-items:center;gap:6px;font-weight:500}
+.search-btn{background:linear-gradient(135deg,#06b6d4,#7c3aed);border:none;border-radius:10px;padding:9px 20px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap;box-shadow:0 0 18px rgba(6,182,212,.22);display:flex;align-items:center;gap:7px;transition:all .15s}
+.search-btn:disabled{background:#0d1e35;color:#1e3a5f;cursor:not-allowed;box-shadow:none}
+.scan-status{display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(6,182,212,.05);border-radius:8px;border:1px solid rgba(6,182,212,.1);margin-top:10px;font-size:11px;font-family:'Space Mono';color:#06b6d4}
+.scan-count{margin-left:auto;font-size:10px;padding:1px 8px;border-radius:20px;background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:#34d399;font-weight:700}
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:16px}
+.stat-card{background:#060e1c;border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:10px 12px}
+.stat-icon{font-size:16px;margin-bottom:3px}
+.stat-val{font-size:20px;font-weight:700;font-family:'Space Mono';line-height:1}
+.stat-label{font-size:10px;color:#334155;margin-top:3px}
+/* FILTERS */
+.filters{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.filter-chips{display:flex;gap:6px}
+.chip{background:transparent;border:1px solid rgba(255,255,255,.07);color:#334155;border-radius:7px;padding:3px 10px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .12s}
+.chip.active{background:rgba(6,182,212,.1);border-color:#06b6d4;color:#06b6d4}
+select.sort-sel{background:#060e1c;border:1px solid rgba(255,255,255,.07);color:#475569;border-radius:7px;padding:3px 9px;font-size:11px;cursor:pointer;font-family:inherit}
+select.sort-sel option{background:#0a1628}
+.result-count{font-size:11px;font-family:'Space Mono';color:#06b6d4;background:rgba(6,182,212,.08);padding:2px 10px;border-radius:20px;border:1px solid rgba(6,182,212,.18)}
+/* JOB CARD */
+.job-list{display:flex;flex-direction:column;gap:10px}
+.job-card{background:linear-gradient(135deg,#070e1c,#050c17);border:1px solid rgba(255,255,255,.06);border-left:3px solid #34d399;border-radius:13px;padding:16px 20px;box-shadow:0 4px 18px rgba(0,0,0,.4);transition:transform .15s,box-shadow .15s;animation:fadeUp .3s ease both}
+.job-card:hover{transform:translateY(-2px);box-shadow:0 16px 48px rgba(0,0,0,.5)}
+.job-card.saved-card{border-left-color:#a78bfa}
+.card-inner{display:flex;gap:14px;align-items:flex-start}
+.card-left{flex:1;min-width:0}
+.card-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.job-title{font-size:14px;font-weight:600;color:#f1f5f9;margin-bottom:4px}
+.job-company{font-size:12.5px;color:#5a7a9e;font-weight:500;margin-bottom:7px}
+.job-meta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;font-size:11px;color:#334155}
+.job-meta .salary{color:#34d399;font-weight:600}
+.tags-row{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:0}
+.ai-tag{font-size:9.5px;padding:2px 7px;border-radius:5px;font-weight:600}
+.tech-tag{font-size:9.5px;padding:2px 7px;border-radius:5px}
+.badge{font-size:9px;padding:2px 7px;border-radius:20px;font-weight:700;display:inline-flex;align-items:center;gap:3px}
+/* APPLY BTN */
+.apply-btn{background:linear-gradient(135deg,#06b6d4,#0284c7);color:#fff;border:none;border-radius:9px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:5px;font-family:inherit;white-space:nowrap;box-shadow:0 0 12px rgba(6,182,212,.25);transition:all .15s}
+.apply-btn:hover{filter:brightness(1.15);transform:scale(1.03)}
+.save-btn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#475569;border-radius:8px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
+.save-btn.active{background:rgba(167,139,250,.12);border-color:#a78bfa;color:#a78bfa}
+.track-btn{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);color:#a78bfa;border-radius:8px;padding:4px 10px;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+.remove-btn{background:transparent;border:1px solid rgba(248,113,113,.15);color:#f87171;border-radius:7px;padding:3px 8px;font-size:10px;cursor:pointer;font-family:inherit}
+.h1b-note{font-size:9px;color:#0d2137}
+/* BENEFITS */
+.benefits-toggle{background:none;border:none;padding:0;color:#34d399;font-size:11px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px;font-weight:600;margin-top:8px}
+.benefits-list{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;animation:fadeUp .15s ease}
+.benefit-chip{font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.15);color:#6ee7b7}
+/* NOTES */
+.notes-area{width:100%;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:7px;padding:7px 10px;color:#94a3b8;font-size:11px;font-family:inherit;resize:vertical;min-height:48px;margin-top:8px}
+.notes-area::placeholder{color:#334155}
+/* TRACKER */
+.status-strip{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+.status-chip{border:1px solid rgba(255,255,255,.07);color:#475569;border-radius:8px;padding:4px 11px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;background:transparent;transition:all .12s}
+.pipeline-bar{display:flex;gap:2px;height:7px;border-radius:4px;overflow:hidden;margin:14px 0 8px}
+.pipe-seg{height:100%;transition:width .3s}
+.pipe-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:10px;color:#475569}
+/* SALARY */
+.salary-search{background:linear-gradient(135deg,#09162b,#070f1e);border:1px solid rgba(6,182,212,.15);border-radius:14px;padding:18px 22px;margin-bottom:18px}
+.salary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:14px}
+.salary-band{border-radius:12px;padding:14px 16px;animation:fadeUp .3s ease both}
+.salary-band-level{font-size:10px;font-family:'Space Mono';letter-spacing:.5px;margin-bottom:8px;color:#475569}
+.salary-band-base{font-size:18px;font-weight:700;font-family:'Space Mono';line-height:1;margin-bottom:4px}
+.salary-band-total{font-size:11px;color:#64748b;margin-bottom:8px}
+.top-payers{background:#070e1c;border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:14px 18px;margin-bottom:12px}
+.payer-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+.payer-row:last-child{border-bottom:none}
+.skill-bonuses{display:flex;gap:8px;flex-wrap:wrap}
+.skill-bonus{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:9px;padding:8px 14px;text-align:center}
+/* EMPTY */
+.empty{text-align:center;padding:56px 0;color:#334155}
+.empty-icon{font-size:40px;margin-bottom:12px}
+/* ERROR */
+.error-box{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:10px 14px;color:#f87171;font-size:12.5px;margin-bottom:14px}
+/* FOOTER */
+#footer{max-width:1060px;margin:0 auto;padding:14px 18px 20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;border-top:1px solid rgba(255,255,255,.03);margin-top:8px}
+#footer span{font-size:9px;font-family:'Space Mono';color:#0d2137}
+</style>
 </head>
-<body>
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+<body class="grid-bg">
 
-    // localStorage-based persistent storage (works in all browsers)
-    const store = {
-      get: async (key) => { try { const v=localStorage.getItem(key); return v?JSON.parse(v):null; } catch { return null; } },
-      set: async (key,val) => { try { localStorage.setItem(key,JSON.stringify(val)); } catch {} }
-    };
+<!-- HEADER -->
+<div id="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-title">JobRadar Pro <span style="font-family:'Space Mono';font-size:9.5px;-webkit-text-fill-color:#334155;font-weight:400">H1B · AI · DALLAS</span></div>
+        <div class="logo-sub">NIKHIL BOORLA · FULL-TIME ONLY · RECENT FIRST</div>
+      </div>
+    </div>
+    <div class="header-badges">
+      <span class="hbadge no">🚫 No Citizenship</span>
+      <span class="hbadge no">🚫 No Contract/W2</span>
+      <span class="hbadge yes">✅ H1B til Jul'27</span>
+      <span class="hbadge yes">✅ $150K+ Target</span>
+    </div>
+  </div>
+</div>
 
+<!-- PROGRESS BAR -->
+<div id="progress-bar"><div id="progress-fill"></div></div>
 
+<!-- NAV -->
+<div id="nav">
+  <div class="nav-inner">
+    <button class="nav-btn active" onclick="switchTab('search')">🔍 Job Search</button>
+    <button class="nav-btn" onclick="switchTab('saved')">🔖 Saved <span class="nav-count" id="saved-count">0</span></button>
+    <button class="nav-btn" onclick="switchTab('tracker')">📊 Applications <span class="nav-count" id="app-count">0</span></button>
+    <button class="nav-btn" onclick="switchTab('salary')">💰 Salary Intel</button>
+  </div>
+</div>
 
-// ─── PROMPTS ──────────────────────────────────────────────────────────────────
-const JOB_SEARCH_PROMPT = `You are a specialized job search assistant for H1B visa holders targeting FULL-TIME permanent Data Engineer and AI roles near Dallas TX 75234.
+<!-- MAIN -->
+<div id="main">
 
-Run ALL of these web searches:
-1. "senior data engineer AI LLM full time Dallas TX H1B sponsorship site:linkedin.com"
-2. "data engineer generative AI RAG full time Dallas H1B sponsorship 2025 site:indeed.com"
-3. "AI data engineer MLOps Databricks full time H1B Dallas TX site:dice.com"
-4. "data platform engineer LLM vector database full time Dallas remote H1B sponsorship"
-5. "data engineer machine learning full time H1B Dallas Texas 2025 site:glassdoor.com"
-6. "senior data engineer AI pipeline full time H1B sponsor ZipRecruiter Dallas"
-7. "data engineer GenAI Azure OpenAI full time Dallas Texas H1B 2025"
-8. "data engineer AI full time permanent H1B sponsorship remote Texas 2025"
+  <!-- ── SEARCH TAB ── -->
+  <div id="tab-search" class="tab-panel active">
+    <div class="search-box">
+      <div class="search-grid">
+        <div><div class="field-label">ROLE</div><div class="field-val">💼 Data Engineer / AI Engineer</div></div>
+        <div><div class="field-label">LOCATION</div><div class="field-val">📍 75234 Dallas + Remote</div></div>
+        <div><div class="field-label">TYPE</div><div class="field-val">✅ Full-Time Permanent</div></div>
+        <div><div class="field-label">VISA</div><div class="field-val">🛂 H1B Sponsorship</div></div>
+        <button class="search-btn" id="search-btn" onclick="runSearch()">🔍 Find Jobs</button>
+      </div>
+      <div class="scan-status" id="scan-status" style="display:none">
+        <span id="scan-icon">💼</span>
+        <span>Scanning <strong id="scan-src">LinkedIn</strong> · filtering H1B · full-time · AI · Dallas 75234</span>
+        <span class="scan-count" id="scan-count" style="display:none">0 found</span>
+      </div>
+    </div>
+    <div id="search-error" class="error-box" style="display:none"></div>
+    <div class="stats-grid" id="stats-grid" style="display:none">
+      <div class="stat-card fade"><div class="stat-icon">💼</div><div class="stat-val" id="s-total" style="color:#34d399">0</div><div class="stat-label">Jobs Found</div></div>
+      <div class="stat-card fade"><div class="stat-icon">🌐</div><div class="stat-val" id="s-remote" style="color:#06b6d4">0</div><div class="stat-label">Remote</div></div>
+      <div class="stat-card fade"><div class="stat-icon">🛂</div><div class="stat-val" id="s-h1b" style="color:#a78bfa">0</div><div class="stat-label">H1B Ready</div></div>
+      <div class="stat-card fade"><div class="stat-icon">💰</div><div class="stat-val" id="s-salary" style="color:#f472b6">0</div><div class="stat-label">With Salary</div></div>
+    </div>
+    <div class="filters" id="filters-row" style="display:none">
+      <span class="result-count" id="result-count">0 positions</span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <div class="filter-chips">
+          <button class="chip active" onclick="setRemote('all',this)">All</button>
+          <button class="chip" onclick="setRemote('remote',this)">🌐 Remote</button>
+          <button class="chip" onclick="setRemote('onsite',this)">🏢 On-site</button>
+        </div>
+        <select class="sort-sel" onchange="setSort(this.value)">
+          <option value="recent">Most Recent</option>
+          <option value="salary">Highest Salary</option>
+        </select>
+      </div>
+    </div>
+    <div class="job-list" id="job-list"></div>
+    <div class="empty" id="search-empty" style="display:none">
+      <div class="empty-icon">🔍</div>
+      <p style="color:#475569;font-size:14px">No results — try searching again.</p>
+    </div>
+    <div class="empty" id="search-hero">
+      <div class="empty-icon">⚡</div>
+      <h2 style="font-size:17px;font-weight:600;color:#5a7a9e;margin-bottom:6px">Full-Time AI Data Engineer Jobs · H1B Safe</h2>
+      <p style="color:#1e3a5f;font-size:11.5px;margin-bottom:4px">Permanent hire only · No W2/contract · Dallas 75234 + Remote</p>
+      <p style="color:#0d2137;font-size:10px;margin-bottom:22px;font-family:'Space Mono'">Jobs appear live as found · Recent first · Direct apply links</p>
+      <button class="search-btn" style="margin:0 auto" onclick="runSearch()">🔍 Start Job Search</button>
+    </div>
+  </div>
 
-INCLUDE ONLY: Full-Time permanent, H1B sponsorship open, Dallas/Remote, AI skill required (LLM/GenAI/RAG/MLOps/Vector DB/Embeddings/Spark ML/Databricks AI), posted within 60 days.
-EXCLUDE: US Citizenship, Green Card only, Security Clearance, Contract/W2/C2C/1099/temp/part-time.
+  <!-- ── SAVED TAB ── -->
+  <div id="tab-saved" class="tab-panel">
+    <div class="job-list" id="saved-list"></div>
+    <div class="empty" id="saved-empty">
+      <div class="empty-icon">🔖</div>
+      <p style="color:#475569;font-size:14px">No saved jobs yet.</p>
+      <p style="color:#334155;font-size:12px;margin-top:6px">Hit <strong style="color:#06b6d4">+ Save</strong> on any job in the Search tab.</p>
+    </div>
+  </div>
 
-URL RULE: applyUrl must be the EXACT posting URL with job ID. Example: linkedin.com/jobs/view/1234567890, indeed.com/viewjob?jk=abc123. NEVER homepage URLs.
+  <!-- ── TRACKER TAB ── -->
+  <div id="tab-tracker" class="tab-panel">
+    <div id="tracker-content"></div>
+    <div class="empty" id="tracker-empty">
+      <div class="empty-icon">📊</div>
+      <p style="color:#475569;font-size:14px">No applications tracked yet.</p>
+      <p style="color:#334155;font-size:12px;margin-top:6px">Click <strong style="color:#a78bfa">+ Track</strong> on any job card.</p>
+    </div>
+  </div>
 
-Return ONLY a raw JSON array sorted by most recently posted. Each object:
-{"id":number,"title":"string","company":"string","location":"string","salary":"string","postedRaw":"string","postedScore":number,"sponsorship":"string","applyUrl":"EXACT URL","tags":["max 6"],"source":"string","remote":bool,"benefits":["list"],"aiSkills":["max 5"],"seniorityLevel":"string","companySize":"string"}`;
+  <!-- ── SALARY TAB ── -->
+  <div id="tab-salary" class="tab-panel">
+    <div class="salary-search">
+      <p style="font-size:10px;color:#475569;font-family:'Space Mono';margin-bottom:12px">RESEARCH 2025 SALARY DATA</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div style="flex:1;min-width:200px">
+          <div class="field-label">PRESET ROLES</div>
+          <select id="salary-role" style="width:100%;background:rgba(6,182,212,.04);border:1px solid rgba(6,182,212,.1);border-radius:8px;padding:8px 11px;font-size:12px;color:#94a3b8;font-family:inherit;cursor:pointer">
+            <option>Senior Data Engineer</option>
+            <option>Lead Data Engineer</option>
+            <option>AI Data Engineer</option>
+            <option>Data Platform Engineer</option>
+            <option>ML Data Engineer</option>
+            <option>Staff Data Engineer</option>
+            <option>Principal Data Engineer</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <div class="field-label">OR CUSTOM ROLE</div>
+          <input id="salary-custom" placeholder="e.g. AI Data Platform Engineer" style="width:100%;background:rgba(6,182,212,.04);border:1px solid rgba(6,182,212,.1);border-radius:8px;padding:8px 11px;font-size:12px;color:#94a3b8;font-family:inherit"/>
+        </div>
+        <button class="search-btn" id="salary-btn" onclick="runSalary()">💰 Get Salaries</button>
+      </div>
+    </div>
+    <div id="salary-error" class="error-box" style="display:none"></div>
+    <div id="salary-loading" style="display:none;text-align:center;padding:40px 0">
+      <div style="font-size:36px;margin-bottom:12px;animation:pulse 1.5s ease-in-out infinite">💰</div>
+      <p style="font-family:'Space Mono';font-size:12px;color:#06b6d4">Scanning Levels.fyi · Glassdoor · LinkedIn · Indeed...</p>
+    </div>
+    <div id="salary-results"></div>
+    <div class="empty" id="salary-empty">
+      <div class="empty-icon">💰</div>
+      <p style="color:#475569;font-size:13px">Select a role and click Get Salaries</p>
+      <p style="color:#334155;font-size:11px;margin-top:4px">Pulls live 2025 data from Levels.fyi · Glassdoor · LinkedIn</p>
+    </div>
+  </div>
 
-const SALARY_PROMPT = `You are a compensation research expert. Use web_search to find CURRENT (2025) salary data for the role and location specified.
+</div>
 
-Search for:
-1. "[ROLE] salary Dallas TX 2025 site:levels.fyi"
-2. "[ROLE] salary Dallas Texas 2025 site:glassdoor.com"
-3. "[ROLE] compensation H1B Dallas 2025 site:linkedin.com"
-4. "[ROLE] salary range 2025 site:indeed.com"
-5. "[ROLE] total compensation 2025 [COMPANY_TYPE]"
+<div id="footer">
+  <span>JOBRADAR PRO · NIKHIL BOORLA · H1B · DALLAS 75234 · AI ROLES 2025</span>
+  <span>Powered by Claude AI + Live Web Search</span>
+</div>
 
-Return ONLY a raw JSON object (no markdown):
-{
-  "role": "string",
-  "location": "Dallas, TX",
-  "asOf": "2025",
-  "ranges": [
-    {"level":"Entry (0-3 yrs)","base":"$X-$Y","total":"$X-$Y","notes":"string"},
-    {"level":"Mid (3-6 yrs)","base":"$X-$Y","total":"$X-$Y","notes":"string"},
-    {"level":"Senior (6-10 yrs)","base":"$X-$Y","total":"$X-$Y","notes":"string"},
-    {"level":"Lead/Staff (10+ yrs)","base":"$X-$Y","total":"$X-$Y","notes":"string"}
-  ],
-  "topPayers": [{"company":"string","range":"string","notes":"string"}],
-  "hotSkillsBonus": [{"skill":"string","premiumPct":"string"}],
-  "h1bNotes": "string",
-  "negotiationTip": "string",
-  "sources": ["source1","source2"]
-}`;
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let allJobs = [];
+let savedJobs = JSON.parse(localStorage.getItem('jr_saved')||'[]');
+let appJobs   = JSON.parse(localStorage.getItem('jr_apps')||'[]');
+let remoteFilter = 'all';
+let sortMode = 'recent';
+let expandedBenefits = new Set();
+let progressTimer, scanTimer, progressVal = 0;
 
-// ─── CONSTANTS ────────────────────────────────────────────────────────────────
-const STATUS_CONFIG = {
-  "Saved":        { color:"#06b6d4", bg:"rgba(6,182,212,.12)",   emoji:"🔖" },
-  "Applied":      { color:"#a78bfa", bg:"rgba(167,139,250,.12)", emoji:"📤" },
-  "Phone Screen": { color:"#fbbf24", bg:"rgba(251,191,36,.12)",  emoji:"📞" },
-  "Tech Round":   { color:"#f97316", bg:"rgba(249,115,22,.12)",  emoji:"💻" },
-  "Final Round":  { color:"#ec4899", bg:"rgba(236,72,153,.12)",  emoji:"🎯" },
-  "Offer":        { color:"#34d399", bg:"rgba(52,211,153,.12)",  emoji:"🎉" },
-  "Rejected":     { color:"#f87171", bg:"rgba(248,113,113,.12)", emoji:"❌" },
-  "Ghosted":      { color:"#475569", bg:"rgba(71,85,105,.12)",   emoji:"👻" },
-};
-const ALL_STATUSES = Object.keys(STATUS_CONFIG);
-
-const AI_COLORS = { LLM:"#a78bfa",RAG:"#f472b6",MLOps:"#34d399",GenAI:"#fb923c","Vector DB":"#60a5fa",Embeddings:"#facc15",NLP:"#4ade80",OpenAI:"#a78bfa","Hugging Face":"#fbbf24",Databricks:"#f59e0b",PySpark:"#8b5cf6","Azure OpenAI":"#38bdf8",SageMaker:"#fb923c","Delta Lake":"#6366f1",Airflow:"#14b8a6",Kafka:"#ec4899" };
-const TAG_COLORS = { Python:"#3b82f6",PySpark:"#8b5cf6",Databricks:"#f59e0b",SQL:"#10b981",AWS:"#f97316",Azure:"#0ea5e9",GCP:"#34d399",Spark:"#a855f7",Kafka:"#ec4899",dbt:"#6366f1",Airflow:"#14b8a6",ML:"#f43f5e",AI:"#06b6d4",LLM:"#a78bfa",RAG:"#f472b6",MLOps:"#34d399","Delta Lake":"#60a5fa",Snowflake:"#38bdf8" };
-const BENEFIT_ICONS = { "Health":"🏥","Dental":"🦷","Vision":"👁️","401k":"💰","PTO":"🏖️","Unlimited":"🏖️","Remote":"🏠","Hybrid":"🏠","Equity":"📈","RSU":"📈","Sign-on":"🎁","Bonus":"🎁","Parental":"👶","Tuition":"🎓","Gym":"💪","Wellness":"🧘" };
 const SCAN_STEPS = [
-  {src:"LinkedIn",icon:"💼"},{src:"Indeed",icon:"🔍"},{src:"Dice",icon:"🎲"},
-  {src:"Glassdoor",icon:"🚪"},{src:"ZipRecruiter",icon:"⚡"},{src:"Builtin",icon:"🏗️"},
-  {src:"Monster",icon:"👾"},{src:"SimplyHired",icon:"📋"},{src:"Wellfound",icon:"🚀"},
+  {src:'LinkedIn',icon:'💼'},{src:'Indeed',icon:'🔍'},{src:'Dice',icon:'🎲'},
+  {src:'Glassdoor',icon:'🚪'},{src:'ZipRecruiter',icon:'⚡'},{src:'Builtin',icon:'🏗️'},
+  {src:'Monster',icon:'👾'},{src:'SimplyHired',icon:'📋'},{src:'Wellfound',icon:'🚀'},
 ];
-const SALARY_ROLES = ["Senior Data Engineer","Lead Data Engineer","AI Data Engineer","Data Platform Engineer","ML Data Engineer","Staff Data Engineer","Principal Data Engineer"];
-
-const gc = (t,m) => { for(const [k,v] of Object.entries(m)) if(t?.includes(k)) return v; return "#475569"; };
-const gbi = b => { for(const [k,v] of Object.entries(BENEFIT_ICONS)) if(b?.includes(k)) return v; return "✨"; };
-
-const buildUrl = (job) => {
-  const raw = (job.applyUrl||"").trim();
-  const t = encodeURIComponent(`${job.title} ${job.company}`);
-  const src = (job.source||"").toLowerCase();
-  const bad = !raw||raw==="null"||raw==="#"
-    ||/^https?:\/\/(www\.)?(linkedin\.com\/jobs\/?$|linkedin\.com\/jobs\/search)/i.test(raw)
-    ||/^https?:\/\/(www\.)?indeed\.com\/?(\?.*)?$/i.test(raw)
-    ||/^https?:\/\/(www\.)?dice\.com\/?(\?.*)?$/i.test(raw)
-    ||/^https?:\/\/(www\.)?glassdoor\.com\/?(\?.*)?$/i.test(raw)
-    ||/^https?:\/\/(www\.)?ziprecruiter\.com\/?(\?.*)?$/i.test(raw);
-  if(!bad) return raw;
-  if(src.includes("linkedin"))     return `https://www.linkedin.com/jobs/search/?keywords=${t}&location=Dallas%2C+TX&f_TPR=r2592000&f_JT=F`;
-  if(src.includes("dice"))         return `https://www.dice.com/jobs?q=${t}&location=75234&employment=FULLTIME`;
-  if(src.includes("glassdoor"))    return `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${t}&locT=C&locId=1139977&jobType=fulltime`;
-  if(src.includes("ziprecruiter")) return `https://www.ziprecruiter.com/jobs-search?search=${t}&location=Dallas%2C+TX&employment_type=full_time`;
-  if(src.includes("builtin"))      return `https://builtin.com/jobs/dev-engineering/data?search=${encodeURIComponent(job.title)}`;
-  return `https://www.indeed.com/jobs?q=${t}&l=Dallas%2C+TX+75234&fromage=14&jt=fulltime`;
+const AI_COLORS = {LLM:'#a78bfa',RAG:'#f472b6',MLOps:'#34d399',GenAI:'#fb923c','Vector DB':'#60a5fa',Embeddings:'#facc15',NLP:'#4ade80',Databricks:'#f59e0b',PySpark:'#8b5cf6','Azure OpenAI':'#38bdf8',SageMaker:'#fb923c',Airflow:'#14b8a6',Kafka:'#ec4899'};
+const TAG_COLORS = {Python:'#3b82f6',PySpark:'#8b5cf6',Databricks:'#f59e0b',SQL:'#10b981',AWS:'#f97316',Azure:'#0ea5e9',GCP:'#34d399',Spark:'#a855f7',Kafka:'#ec4899',dbt:'#6366f1',Airflow:'#14b8a6',ML:'#f43f5e',AI:'#06b6d4',LLM:'#a78bfa',RAG:'#f472b6',MLOps:'#34d399','Delta Lake':'#60a5fa',Snowflake:'#38bdf8'};
+const BENEFIT_ICONS = {Health:'🏥',Dental:'🦷',Vision:'👁️','401k':'💰',PTO:'🏖️',Unlimited:'🏖️',Remote:'🏠',Hybrid:'🏠',Equity:'📈',RSU:'📈','Sign-on':'🎁',Bonus:'🎁',Parental:'👶',Tuition:'🎓',Gym:'💪',Wellness:'🧘'};
+const STATUS_CONFIG = {
+  'Applied':      {color:'#a78bfa',emoji:'📤'},
+  'Phone Screen': {color:'#fbbf24',emoji:'📞'},
+  'Tech Round':   {color:'#f97316',emoji:'💻'},
+  'Final Round':  {color:'#ec4899',emoji:'🎯'},
+  'Offer':        {color:'#34d399',emoji:'🎉'},
+  'Rejected':     {color:'#f87171',emoji:'❌'},
+  'Ghosted':      {color:'#475569',emoji:'👻'},
 };
 
-const extractJobs = (buf) => {
+// ── HELPERS ────────────────────────────────────────────────────────────────────
+function gc(tag, map) {
+  for (const [k,v] of Object.entries(map)) if (tag && tag.includes(k)) return v;
+  return '#475569';
+}
+function gbi(b) {
+  for (const [k,v] of Object.entries(BENEFIT_ICONS)) if (b && b.includes(k)) return v;
+  return '✨';
+}
+function buildUrl(job) {
+  const raw = (job.applyUrl||'').trim();
+  const t = encodeURIComponent(`${job.title} ${job.company}`);
+  const src = (job.source||'').toLowerCase();
+  const bad = !raw || raw==='null' || raw==='#'
+    || /^https?:\/\/(www\.)?(linkedin\.com\/jobs\/?$|linkedin\.com\/jobs\/search)/i.test(raw)
+    || /^https?:\/\/(www\.)?indeed\.com\/?(\?.*)?$/i.test(raw)
+    || /^https?:\/\/(www\.)?dice\.com\/?(\?.*)?$/i.test(raw)
+    || /^https?:\/\/(www\.)?glassdoor\.com\/?(\?.*)?$/i.test(raw)
+    || /^https?:\/\/(www\.)?ziprecruiter\.com\/?(\?.*)?$/i.test(raw);
+  if (!bad) return raw;
+  if (src.includes('linkedin'))     return `https://www.linkedin.com/jobs/search/?keywords=${t}&location=Dallas%2C+TX&f_TPR=r2592000&f_JT=F`;
+  if (src.includes('dice'))         return `https://www.dice.com/jobs?q=${t}&location=75234&employment=FULLTIME`;
+  if (src.includes('glassdoor'))    return `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${t}&locT=C&locId=1139977&jobType=fulltime`;
+  if (src.includes('ziprecruiter')) return `https://www.ziprecruiter.com/jobs-search?search=${t}&location=Dallas%2C+TX&employment_type=full_time`;
+  if (src.includes('builtin'))      return `https://builtin.com/jobs/dev-engineering/data?search=${encodeURIComponent(job.title||'')}`;
+  if (src.includes('monster'))      return `https://www.monster.com/jobs/search?q=${t}&where=Dallas-TX&jt=fulltime`;
+  return `https://www.indeed.com/jobs?q=${t}&l=Dallas%2C+TX+75234&fromage=14&jt=fulltime`;
+}
+function extractJobs(buf) {
   const jobs=[]; let d=0,s=-1;
   for(let i=0;i<buf.length;i++){
-    if(buf[i]==="{"){if(d===0)s=i;d++;}
-    else if(buf[i]==="}"){d--;if(d===0&&s!==-1){try{const o=JSON.parse(buf.slice(s,i+1));if(o.title&&o.company)jobs.push(o);}catch{}s=-1;}}
+    if(buf[i]==='{'){if(d===0)s=i;d++;}
+    else if(buf[i]==='}'){d--;if(d===0&&s!==-1){
+      try{const o=JSON.parse(buf.slice(s,i+1));if(o.title&&o.company)jobs.push(o);}catch{}
+      s=-1;
+    }}
   }
   return jobs;
-};
+}
+function saveLS(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
+function updateCounts() {
+  document.getElementById('saved-count').textContent = savedJobs.length;
+  document.getElementById('app-count').textContent = appJobs.length;
+}
 
-// using top-level store for persistence
+// ── TAB SWITCHING ──────────────────────────────────────────────────────────────
+function switchTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  const btns = document.querySelectorAll('.nav-btn');
+  const map = {search:0,saved:1,tracker:2,salary:3};
+  btns[map[id]].classList.add('active');
+  if (id==='saved') renderSaved();
+  if (id==='tracker') renderTracker();
+}
 
-// ─── MINI COMPONENTS ─────────────────────────────────────────────────────────
-const Badge = ({text,color,bg}) => (
-  <span style={{fontSize:9,padding:"2px 7px",borderRadius:20,fontWeight:700,background:bg||`${color}15`,border:`1px solid ${color}30`,color,display:"inline-flex",alignItems:"center",gap:3}}>{text}</span>
-);
+// ── PROGRESS BAR ──────────────────────────────────────────────────────────────
+function startProgress() {
+  progressVal = 0;
+  document.getElementById('progress-bar').style.display = 'block';
+  document.getElementById('progress-fill').style.width = '0%';
+  progressTimer = setInterval(() => {
+    progressVal = Math.min(progressVal + Math.random()*4, 88);
+    document.getElementById('progress-fill').style.width = progressVal + '%';
+  }, 300);
+}
+function endProgress() {
+  clearInterval(progressTimer);
+  document.getElementById('progress-fill').style.width = '100%';
+  setTimeout(() => document.getElementById('progress-bar').style.display = 'none', 600);
+}
 
-const Pill = ({text,map}) => (
-  <span style={{fontSize:9.5,padding:"2px 7px",borderRadius:5,background:`${gc(text,map)}10`,border:`1px solid ${gc(text,map)}25`,color:gc(text,map)}}>{text}</span>
-);
+// ── RENDER JOB CARD ───────────────────────────────────────────────────────────
+function renderCard(job, idx, context) {
+  const id = String(job.id || job.title+job.company);
+  const isSaved = savedJobs.some(j => String(j.id||j.title+j.company) === id);
+  const isTracked = appJobs.some(j => String(j.id||j.title+j.company) === id);
+  const expandKey = context+'_'+idx;
 
-const Skeleton = () => (
-  <div style={{background:"#070e1c",border:"1px solid rgba(255,255,255,.04)",borderLeft:"3px solid #1e3a5f",borderRadius:13,padding:"17px 20px",animation:"fadeUp .3s ease both"}}>
-    <div style={{display:"flex",gap:14}}>
-      <div style={{flex:1}}>
-        {[[0,"55%",16],[1,"35%",12],[2,null,10]].map(([i,w,h])=>(
-          <div key={i} style={{display:"flex",gap:8,marginBottom:10}}>
-            {w?<div className="shimmer" style={{height:h,width:w,borderRadius:5}}/>:
-            [60,90,55,70].map((ww,j)=><div key={j} className="shimmer" style={{height:20,width:ww,borderRadius:5}}/>)}
-          </div>
-        ))}
-      </div>
-      <div className="shimmer" style={{height:36,width:100,borderRadius:9,flexShrink:0}}/>
-    </div>
-  </div>
-);
+  const aiTagsHtml = (job.aiSkills||[]).map(s =>
+    `<span class="ai-tag" style="background:${gc(s,AI_COLORS)}15;border:1px solid ${gc(s,AI_COLORS)}30;color:${gc(s,AI_COLORS)}">⚡ ${s}</span>`
+  ).join('');
 
-// ─── JOB CARD ─────────────────────────────────────────────────────────────────
-const JobCard = ({job,idx,expanded,onToggle,onSave,onApply,saved,applied,inTracker}) => (
-  <div className="card" style={{background:"linear-gradient(135deg,#070e1c,#050c17)",border:"1px solid rgba(255,255,255,.06)",borderLeft:"3px solid #34d399",borderRadius:13,padding:"16px 20px",boxShadow:"0 4px 18px rgba(0,0,0,.4)",animationDelay:`${idx*.04}s`}}>
-    <div style={{display:"flex",gap:14,alignItems:"flex-start"}}>
-      <div style={{flex:1,minWidth:0}}>
-        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:5,flexWrap:"wrap"}}>
-          <h3 style={{margin:0,fontSize:14,fontWeight:600,color:"#f1f5f9"}}>{job.title}</h3>
-          <Badge text="✅ Full-Time" color="#34d399"/>
-          {job.remote&&<Badge text="🌐 Remote" color="#06b6d4"/>}
-          {job.seniorityLevel&&job.seniorityLevel!=="Mid"&&<Badge text={job.seniorityLevel} color="#a78bfa"/>}
-          {job.companySize&&job.companySize!=="Unknown"&&<Badge text={job.companySize} color="#64748b"/>}
+  const techTagsHtml = (job.tags||[]).map(t =>
+    `<span class="tech-tag" style="background:${gc(t,TAG_COLORS)}10;border:1px solid ${gc(t,TAG_COLORS)}25;color:${gc(t,TAG_COLORS)}">${t}</span>`
+  ).join('');
+
+  const benefitsHtml = (job.benefits||[]).length > 0 ? `
+    <button class="benefits-toggle" onclick="toggleBenefits('${expandKey}',this)">
+      ⭐ Benefits & Perks (${job.benefits.length}) <span>▾</span>
+    </button>
+    <div class="benefits-list" id="ben-${expandKey}" style="display:none">
+      ${job.benefits.map(b=>`<span class="benefit-chip">${gbi(b)} ${b}</span>`).join('')}
+    </div>` : '';
+
+  const notesHtml = context === 'saved' ? `<textarea class="notes-area" placeholder="Add notes (interview date, contact name, follow-up...)" onchange="saveNote('${id}',this.value)">${job.notes||''}</textarea>` : '';
+
+  const rightBtns = context === 'search' ? `
+    <button class="save-btn ${isSaved?'active':''}" onclick="toggleSave(${JSON.stringify(JSON.stringify(job))})">
+      ${isSaved ? '🔖 Saved' : '+ Save'}
+    </button>
+    <button class="track-btn" onclick="trackJob(${JSON.stringify(JSON.stringify(job))})">+ Track</button>
+  ` : context === 'saved' ? `
+    <button class="track-btn" onclick="trackJob(${JSON.stringify(JSON.stringify(job))})">+ Track App</button>
+    <button class="remove-btn" onclick="removeSaved('${id}')">Remove</button>
+  ` : '';
+
+  return `
+  <div class="job-card ${context==='saved'?'saved-card':''} fade" style="animation-delay:${idx*.04}s">
+    <div class="card-inner">
+      <div class="card-left">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
+          <span class="job-title">${job.title||''}</span>
+          <span class="badge" style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:#34d399">✅ Full-Time</span>
+          ${job.remote?'<span class="badge" style="background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.25);color:#06b6d4">🌐 REMOTE</span>':''}
+          ${job.seniorityLevel&&job.seniorityLevel!=='Mid'?`<span class="badge" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);color:#a78bfa">${job.seniorityLevel}</span>`:''}
         </div>
-        <p style={{margin:"0 0 8px",fontSize:12.5,color:"#5a7a9e",fontWeight:500}}>🏢 {job.company}</p>
-        <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:8,fontSize:11}}>
-          <span style={{color:"#334155"}}>📍 {job.location}</span>
-          <span style={{color:job.salary&&job.salary!=="Not Listed"?"#34d399":"#1e3a5f",fontWeight:job.salary&&job.salary!=="Not Listed"?600:400}}>💰 {job.salary||"Not Listed"}</span>
-          <span style={{color:"#334155"}}>🕐 {job.postedRaw||"Recently"}</span>
-          <span style={{color:"#112240",fontFamily:"'Space Mono'",fontSize:9.5}}>via {job.source}</span>
+        <div class="job-company">🏢 ${job.company||''}</div>
+        <div class="job-meta">
+          <span>📍 ${job.location||''}</span>
+          <span class="${job.salary&&job.salary!=='Not Listed'?'salary':''}">💰 ${job.salary||'Not Listed'}</span>
+          <span>🕐 ${job.postedRaw||'Recently'}</span>
+          <span style="color:#112240;font-family:'Space Mono';font-size:9.5px">via ${job.source||''}</span>
         </div>
-        {job.aiSkills?.length>0&&(
-          <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:6,alignItems:"center"}}>
-            <span style={{fontSize:9,color:"#1e3a5f",fontFamily:"'Space Mono'"}}>AI:</span>
-            {job.aiSkills.map((s,i)=><span key={i} style={{fontSize:9.5,padding:"2px 7px",borderRadius:5,background:`${gc(s,AI_COLORS)}15`,border:`1px solid ${gc(s,AI_COLORS)}30`,color:gc(s,AI_COLORS),fontWeight:600}}>⚡ {s}</span>)}
-          </div>
-        )}
-        {job.tags?.length>0&&<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{job.tags.map((t,i)=><Pill key={i} text={t} map={TAG_COLORS}/>)}</div>}
-        {job.benefits?.length>0&&(
-          <div style={{marginTop:8}}>
-            <button onClick={onToggle} style={{background:"none",border:"none",padding:0,color:"#34d399",fontSize:11,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:4,fontWeight:600}}>
-              ⭐ Benefits ({job.benefits.length}) <span style={{display:"inline-block",transform:expanded?"rotate(180deg)":"none",transition:"transform .18s"}}>▾</span>
-            </button>
-            {expanded&&<div style={{marginTop:7,display:"flex",gap:5,flexWrap:"wrap",animation:"fadeUp .15s ease"}}>{job.benefits.map((b,i)=><span key={i} style={{fontSize:10,padding:"2px 8px",borderRadius:6,background:"rgba(52,211,153,.06)",border:"1px solid rgba(52,211,153,.15)",color:"#6ee7b7"}}>{gbi(b)} {b}</span>)}</div>}
-          </div>
-        )}
+        ${aiTagsHtml ? `<div class="tags-row" style="margin-bottom:6px"><span style="font-size:9px;color:#1e3a5f;font-family:'Space Mono';margin-right:3px">AI:</span>${aiTagsHtml}</div>` : ''}
+        <div class="tags-row">${techTagsHtml}</div>
+        ${benefitsHtml}
+        ${notesHtml}
       </div>
-      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0}}>
-        <a href={buildUrl(job)} target="_blank" rel="noopener noreferrer" onClick={onApply} className="apply-btn" style={{background:"linear-gradient(135deg,#06b6d4,#0284c7)",color:"#fff",border:"none",borderRadius:9,padding:"8px 16px",fontSize:12,fontWeight:700,cursor:"pointer",textDecoration:"none",display:"flex",alignItems:"center",gap:5,fontFamily:"inherit",whiteSpace:"nowrap",boxShadow:"0 0 12px rgba(6,182,212,.25)"}}>
+      <div class="card-right">
+        <a href="${buildUrl(job)}" target="_blank" class="apply-btn">
           Apply Now
-          <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1={10} y1={14} x2={21} y2={3}/></svg>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         </a>
-        {!inTracker&&(
-          <button onClick={onSave} style={{background:saved?"rgba(167,139,250,.12)":"rgba(255,255,255,.04)",border:`1px solid ${saved?"#a78bfa":"rgba(255,255,255,.08)"}`,color:saved?"#a78bfa":"#475569",borderRadius:8,padding:"6px 12px",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",transition:"all .15s"}}>
-            {saved?"🔖 Saved":"+ Save"}
-          </button>
-        )}
-        {!inTracker&&(
-          <button onClick={()=>onApply&&onApply(true)} style={{background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.2)",color:"#a78bfa",borderRadius:8,padding:"5px 12px",fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
-            + Track
-          </button>
-        )}
-        <span style={{fontSize:9,color:"#0d2137"}}>🛡️ H1B eligible</span>
+        ${rightBtns}
+        <span class="h1b-note">🛡️ H1B eligible</span>
       </div>
     </div>
-  </div>
-);
+  </div>`;
+}
 
-// ─── SEARCH TAB ───────────────────────────────────────────────────────────────
-function SearchTab({savedIds,appliedIds,onSave,onTrack}) {
-  const [jobs,setJobs]=useState([]);
-  const [loading,setLoading]=useState(false);
-  const [scanStep,setScanStep]=useState(0);
-  const [error,setError]=useState(null);
-  const [searched,setSearched]=useState(false);
-  const [expandedId,setExpandedId]=useState(null);
-  const [remote,setRemote]=useState("all");
-  const [sort,setSort]=useState("recent");
-  const [progress,setProgress]=useState(0);
-  const seen=useRef(new Set());
-  const scanRef=useRef(null);
-  const progRef=useRef(null);
+function toggleBenefits(key, btn) {
+  const el = document.getElementById('ben-'+key);
+  const open = el.style.display === 'flex';
+  el.style.display = open ? 'none' : 'flex';
+  btn.querySelector('span').textContent = open ? '▾' : '▴';
+}
 
-  useEffect(()=>{
-    if(loading){
-      setScanStep(0);let s=0;
-      scanRef.current=setInterval(()=>{s=(s+1)%SCAN_STEPS.length;setScanStep(s);},1400);
-      let p=0; progRef.current=setInterval(()=>{p=Math.min(p+Math.random()*4,88);setProgress(p);},300);
-    } else { clearInterval(scanRef.current);clearInterval(progRef.current);if(searched)setProgress(100); }
-    return()=>{clearInterval(scanRef.current);clearInterval(progRef.current);};
-  },[loading]);
+// ── SEARCH ─────────────────────────────────────────────────────────────────────
+const JOB_PROMPT = `You are a specialized job search assistant for H1B visa holders targeting FULL-TIME permanent Data Engineer and AI roles near Dallas TX 75234.
+Run ALL web searches: 1. "senior data engineer AI LLM full time Dallas TX H1B sponsorship site:linkedin.com" 2. "data engineer generative AI RAG full time Dallas H1B 2025 site:indeed.com" 3. "AI data engineer MLOps Databricks full time H1B Dallas TX site:dice.com" 4. "data platform engineer LLM vector database full time Dallas remote H1B" 5. "data engineer machine learning full time H1B Dallas Texas 2025 site:glassdoor.com" 6. "senior data engineer AI pipeline full time H1B sponsor ZipRecruiter Dallas" 7. "data engineer GenAI Azure OpenAI full time Dallas H1B 2025" 8. "data engineer AI full time permanent H1B sponsorship remote Texas 2025"
+INCLUDE ONLY: Full-Time permanent, H1B open, Dallas/Remote, AI skill (LLM/GenAI/RAG/MLOps/Vector DB/Spark ML/Databricks AI). EXCLUDE: US Citizenship, Green Card only, Security Clearance, Contract/W2/C2C/temp.
+URL RULE: applyUrl must be EXACT posting URL with job ID. NOT homepage. Return ONLY raw JSON array sorted by most recently posted.
+Each: {"id":number,"title":"string","company":"string","location":"string","salary":"string","postedRaw":"string","postedScore":number,"applyUrl":"EXACT URL","tags":[],"source":"string","remote":bool,"benefits":[],"aiSkills":[],"seniorityLevel":"string","companySize":"string"}`;
 
-  const search=async()=>{
-    setLoading(true);setError(null);setJobs([]);setSearched(true);setProgress(0);seen.current.clear();
-    try{
-      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:8000,stream:true,system:JOB_SEARCH_PROMPT,tools:[{type:"web_search_20250305",name:"web_search"}],messages:[{role:"user",content:"Find H1B-sponsoring FULL-TIME AI Data Engineer jobs near Dallas TX 75234. Run all 8 searches. No contract/W2/temp. Sort by most recent. EXACT direct URLs with job IDs. Return only JSON array."}]})});
-      if(!res.ok) throw new Error(`API error ${res.status}`);
-      const reader=res.body.getReader();const dec=new TextDecoder();let buf="";
-      while(true){
-        const{done,value}=await reader.read();if(done)break;
-        for(const line of dec.decode(value,{stream:true}).split("
-")){
-          if(!line.startsWith("data: "))continue;
-          const d=line.slice(6).trim();if(d==="[DONE]")continue;
-          try{const e=JSON.parse(d);if(e.type==="content_block_delta"&&e.delta?.type==="text_delta"){buf+=e.delta.text;const found=extractJobs(buf).filter(j=>!seen.current.has(j.id??j.title+j.company));if(found.length){found.forEach(j=>seen.current.add(j.id??j.title+j.company));setJobs(p=>[...p,...found].sort((a,b)=>(a.postedScore??30)-(b.postedScore??30)));}}
-          }catch{}
-        }
+async function runSearch() {
+  allJobs = [];
+  const seenIds = new Set();
+  document.getElementById('search-btn').disabled = true;
+  document.getElementById('search-btn').innerHTML = '<span style="width:13px;height:13px;border:2px solid #1e3a5f;border-top-color:#06b6d4;border-radius:50%;animation:spin 1s linear infinite;display:inline-block"></span> Scanning...';
+  document.getElementById('search-error').style.display = 'none';
+  document.getElementById('search-hero').style.display = 'none';
+  document.getElementById('search-empty').style.display = 'none';
+  document.getElementById('scan-status').style.display = 'flex';
+  document.getElementById('scan-count').style.display = 'none';
+  document.getElementById('stats-grid').style.display = 'none';
+  document.getElementById('filters-row').style.display = 'none';
+  document.getElementById('job-list').innerHTML = '<div class="job-card shimmer" style="height:100px;border-left:3px solid #1e3a5f"></div><div class="job-card shimmer" style="height:100px;border-left:3px solid #1e3a5f;margin-top:10px"></div><div class="job-card shimmer" style="height:100px;border-left:3px solid #1e3a5f;margin-top:10px"></div>';
+
+  let scanIdx = 0;
+  scanTimer = setInterval(() => {
+    scanIdx = (scanIdx+1) % SCAN_STEPS.length;
+    document.getElementById('scan-icon').textContent = SCAN_STEPS[scanIdx].icon;
+    document.getElementById('scan-src').textContent = SCAN_STEPS[scanIdx].src;
+  }, 1400);
+  startProgress();
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:8000,stream:true,system:JOB_PROMPT,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:'Find H1B FULL-TIME AI Data Engineer jobs near Dallas TX 75234. Run all 8 searches. No W2/contract. Sort recent first. EXACT direct URLs. Return only JSON array.'}]})
+    });
+    if (!res.ok) throw new Error('API error '+res.status);
+    const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
+    while (true) {
+      const {done,value} = await reader.read(); if (done) break;
+      for (const line of dec.decode(value,{stream:true}).split('\n')) {
+        if (!line.startsWith('data: ')) continue;
+        const d = line.slice(6).trim(); if (d==='[DONE]') continue;
+        try {
+          const e = JSON.parse(d);
+          if (e.type==='content_block_delta' && e.delta?.type==='text_delta') {
+            buf += e.delta.text;
+            const found = extractJobs(buf).filter(j => !seenIds.has(String(j.id||j.title+j.company)));
+            if (found.length) {
+              found.forEach(j => seenIds.add(String(j.id||j.title+j.company)));
+              allJobs = [...allJobs, ...found].sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
+              renderJobList();
+              document.getElementById('scan-count').style.display = 'inline';
+              document.getElementById('scan-count').textContent = allJobs.length + ' found';
+            }
+          }
+        } catch {}
       }
-      const m=buf.match(/\[[\s\S]*\]/);if(m){try{const a=JSON.parse(m[0]);if(Array.isArray(a)&&a.length)setJobs(a.sort((a,b)=>(a.postedScore??30)-(b.postedScore??30)));}catch{}}
-    }catch(e){setError(e.message);}finally{setLoading(false);}
-  };
-
-  const displayed=jobs.filter(j=>remote==="all"?true:remote==="remote"?j.remote:!j.remote).sort((a,b)=>sort==="salary"?(parseInt((b.salary||"0").replace(/[^0-9]/g,""))||0)-(parseInt((a.salary||"0").replace(/[^0-9]/g,""))||0):(a.postedScore??30)-(b.postedScore??30));
-
-  return(
-    <div>
-      {/* Search panel */}
-      <div style={{background:"linear-gradient(135deg,#09162b,#070f1e)",border:"1px solid rgba(6,182,212,.15)",borderRadius:15,padding:"18px 22px",marginBottom:18}}>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr)) auto",gap:10,alignItems:"end",marginBottom:loading?12:0}}>
-          {[{l:"ROLE",v:"Data Engineer / AI Engineer",e:"💼"},{l:"LOCATION",v:"75234 Dallas + Remote",e:"📍"},{l:"TYPE",v:"Full-Time Permanent",e:"✅"},{l:"VISA",v:"H1B Sponsorship",e:"🛂"}].map((f,i)=>(
-            <div key={i}>
-              <div style={{fontSize:9,color:"#1e3a5f",fontFamily:"'Space Mono'",letterSpacing:"1px",marginBottom:5}}>{f.l}</div>
-              <div style={{background:"rgba(6,182,212,.04)",border:"1px solid rgba(6,182,212,.1)",borderRadius:8,padding:"7px 11px",fontSize:11,color:"#7c95b4",display:"flex",alignItems:"center",gap:6,fontWeight:500}}><span>{f.e}</span>{f.v}</div>
-            </div>
-          ))}
-          <button onClick={search} disabled={loading} style={{background:loading?"#0d1e35":"linear-gradient(135deg,#06b6d4,#7c3aed)",border:"none",borderRadius:10,padding:"8px 18px",color:loading?"#1e3a5f":"#fff",fontWeight:700,fontSize:13,cursor:loading?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:7,fontFamily:"inherit",whiteSpace:"nowrap",boxShadow:loading?"none":"0 0 18px rgba(6,182,212,.22)"}}>
-            {loading?<><span style={{width:13,height:13,border:"2px solid #1e3a5f",borderTopColor:"#06b6d4",borderRadius:"50%",animation:"spin 1s linear infinite",display:"inline-block"}}/>Scanning...</>:<>🔍 Find Jobs</>}
-          </button>
-        </div>
-        {loading&&(
-          <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",background:"rgba(6,182,212,.05)",borderRadius:8,border:"1px solid rgba(6,182,212,.1)",animation:"slideIn .3s ease"}}>
-            <span>{SCAN_STEPS[scanStep].icon}</span>
-            <span style={{fontSize:11,fontFamily:"'Space Mono'",color:"#06b6d4"}}>Scanning <strong>{SCAN_STEPS[scanStep].src}</strong></span>
-            {jobs.length>0&&<span style={{marginLeft:"auto",fontSize:10,padding:"1px 8px",borderRadius:20,background:"rgba(52,211,153,.12)",border:"1px solid rgba(52,211,153,.3)",color:"#34d399",fontWeight:700}}>{jobs.length} found</span>}
-          </div>
-        )}
-      </div>
-
-      {/* Progress */}
-      {(loading||(searched&&jobs.length>0))&&<div style={{height:2,background:"#0a1628",marginBottom:16,borderRadius:1}}><div style={{height:"100%",width:`${progress}%`,background:"linear-gradient(90deg,#06b6d4,#a78bfa)",transition:"width .4s ease",boxShadow:"0 0 6px rgba(6,182,212,.5)"}}/></div>}
-
-      {error&&<div style={{background:"rgba(239,68,68,.07)",border:"1px solid rgba(239,68,68,.2)",borderRadius:10,padding:"10px 14px",color:"#f87171",fontSize:12.5,marginBottom:14}}>⚠️ {error}</div>}
-
-      {/* Stats */}
-      {jobs.length>0&&(
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:8,marginBottom:16}}>
-          {[{l:"Jobs Found",v:jobs.length,c:"#34d399",e:"💼"},{l:"Remote",v:jobs.filter(j=>j.remote).length,c:"#06b6d4",e:"🌐"},{l:"H1B Ready",v:jobs.length,c:"#a78bfa",e:"🛂"},{l:"With Salary",v:jobs.filter(j=>j.salary&&j.salary!=="Not Listed").length,c:"#f472b6",e:"💰"}].map((s,i)=>(
-            <div key={i} style={{background:"#060e1c",border:"1px solid rgba(255,255,255,.05)",borderRadius:10,padding:"10px 12px",animation:"fadeUp .3s ease both",animationDelay:`${i*.05}s`}}>
-              <div style={{fontSize:16,marginBottom:3}}>{s.e}</div>
-              <div style={{fontSize:20,fontWeight:700,color:s.c,fontFamily:"'Space Mono'",lineHeight:1}}>{s.v}</div>
-              <div style={{fontSize:10,color:"#334155",marginTop:3}}>{s.l}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Filters */}
-      {jobs.length>0&&(
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:8}}>
-          <div style={{display:"flex",alignItems:"center",gap:6}}>
-            <span style={{fontSize:11,fontFamily:"'Space Mono'",color:"#06b6d4",background:"rgba(6,182,212,.08)",padding:"2px 10px",borderRadius:20,border:"1px solid rgba(6,182,212,.18)"}}>{displayed.length} positions</span>
-            {loading&&<span style={{fontSize:10,color:"#34d399",animation:"pulse 1s infinite"}}>● updating</span>}
-          </div>
-          <div style={{display:"flex",gap:6}}>
-            {[["all","All"],["remote","🌐 Remote"],["onsite","🏢 On-site"]].map(([v,l])=>(
-              <button key={v} onClick={()=>setRemote(v)} style={{background:remote===v?"rgba(6,182,212,.1)":"transparent",border:`1px solid ${remote===v?"#06b6d4":"rgba(255,255,255,.07)"}`,color:remote===v?"#06b6d4":"#334155",borderRadius:7,padding:"3px 10px",fontSize:11,fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>
-            ))}
-            <select onChange={e=>setSort(e.target.value)} value={sort} style={{background:"#060e1c",border:"1px solid rgba(255,255,255,.07)",color:"#475569",borderRadius:7,padding:"3px 9px",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>
-              <option value="recent">Most Recent</option>
-              <option value="salary">Highest Salary</option>
-            </select>
-          </div>
-        </div>
-      )}
-
-      <div style={{display:"flex",flexDirection:"column",gap:10}}>
-        {displayed.map((job,i)=><JobCard key={job.id??i} job={job} idx={i} expanded={expandedId===(job.id??i)} onToggle={()=>setExpandedId(expandedId===(job.id??i)?null:(job.id??i))} onSave={()=>onSave(job)} onApply={(track)=>{if(track)onTrack(job);}} saved={savedIds.has(String(job.id??job.title+job.company))} applied={appliedIds.has(String(job.id??job.title+job.company))}/>)}
-        {loading&&[0,1,2].map(i=><Skeleton key={i}/>)}
-      </div>
-
-      {!loading&&searched&&displayed.length===0&&!error&&<div style={{textAlign:"center",padding:"48px 0",color:"#334155"}}><div style={{fontSize:36,marginBottom:10}}>🔍</div><p>No results yet — try searching again.</p></div>}
-      {!searched&&!loading&&(
-        <div style={{textAlign:"center",padding:"52px 0"}}>
-          <div style={{fontSize:46,marginBottom:12}}>⚡</div>
-          <h2 style={{fontSize:17,fontWeight:600,color:"#5a7a9e",margin:"0 0 6px"}}>Full-Time AI Data Engineer Jobs · H1B Safe</h2>
-          <p style={{color:"#1e3a5f",fontSize:11.5,margin:"0 0 4px"}}>Permanent hire only · No W2/contract · Dallas 75234 + Remote</p>
-          <p style={{color:"#0d2137",fontSize:10,margin:"0 0 22px",fontFamily:"'Space Mono'"}}>Jobs appear live as they're found · Recent first · Direct apply links</p>
-          <button onClick={search} style={{background:"linear-gradient(135deg,#06b6d4,#7c3aed)",border:"none",borderRadius:11,padding:"11px 26px",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 0 26px rgba(6,182,212,.28)",display:"inline-flex",alignItems:"center",gap:8}}>🔍 Start Job Search</button>
-        </div>
-      )}
-    </div>
-  );
+    }
+    const m = buf.match(/\[[\s\S]*\]/);
+    if (m) { try { const a=JSON.parse(m[0]); if(Array.isArray(a)&&a.length) { allJobs=a.sort((a,b)=>(a.postedScore||30)-(b.postedScore||30)); renderJobList(); } } catch {} }
+  } catch(e) {
+    document.getElementById('search-error').textContent = '⚠️ '+e.message;
+    document.getElementById('search-error').style.display = 'block';
+  }
+  clearInterval(scanTimer);
+  endProgress();
+  document.getElementById('scan-status').style.display = 'none';
+  document.getElementById('search-btn').disabled = false;
+  document.getElementById('search-btn').innerHTML = '🔍 Find Jobs';
+  if (!allJobs.length) document.getElementById('search-empty').style.display = 'block';
 }
 
-// ─── SAVED JOBS TAB ───────────────────────────────────────────────────────────
-function SavedTab({saved,onRemove,onTrack}) {
-  const [expandedId,setExpandedId]=useState(null);
-  const [notes,setNotes]=useState({});
-
-  if(!saved.length) return(
-    <div style={{textAlign:"center",padding:"60px 0",color:"#334155"}}>
-      <div style={{fontSize:40,marginBottom:12}}>🔖</div>
-      <p style={{fontSize:14,color:"#475569"}}>No saved jobs yet.</p>
-      <p style={{fontSize:12,color:"#334155"}}>Hit <strong style={{color:"#06b6d4"}}>+ Save</strong> on any job in the Search tab.</p>
-    </div>
-  );
-  return(
-    <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-        <span style={{fontSize:11,fontFamily:"'Space Mono'",color:"#06b6d4",background:"rgba(6,182,212,.08)",padding:"2px 10px",borderRadius:20,border:"1px solid rgba(6,182,212,.18)"}}>{saved.length} saved jobs</span>
-      </div>
-      <div style={{display:"flex",flexDirection:"column",gap:10}}>
-        {saved.map((job,i)=>(
-          <div key={i} className="card" style={{background:"linear-gradient(135deg,#070e1c,#050c17)",border:"1px solid rgba(255,255,255,.06)",borderLeft:"3px solid #a78bfa",borderRadius:13,padding:"16px 20px",boxShadow:"0 4px 18px rgba(0,0,0,.4)"}}>
-            <div style={{display:"flex",gap:14,alignItems:"flex-start"}}>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4,flexWrap:"wrap"}}>
-                  <h3 style={{margin:0,fontSize:14,fontWeight:600,color:"#f1f5f9"}}>{job.title}</h3>
-                  <Badge text="🔖 Saved" color="#a78bfa"/>
-                  {job.remote&&<Badge text="🌐 Remote" color="#06b6d4"/>}
-                </div>
-                <p style={{margin:"0 0 7px",fontSize:12.5,color:"#5a7a9e",fontWeight:500}}>🏢 {job.company}</p>
-                <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:8,fontSize:11}}>
-                  <span style={{color:"#334155"}}>📍 {job.location}</span>
-                  <span style={{color:job.salary&&job.salary!=="Not Listed"?"#34d399":"#1e3a5f",fontWeight:600}}>💰 {job.salary||"Not Listed"}</span>
-                  <span style={{color:"#334155"}}>🕐 {job.postedRaw||"Recently"}</span>
-                </div>
-                {job.aiSkills?.length>0&&<div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:6}}>{job.aiSkills.map((s,j)=><span key={j} style={{fontSize:9.5,padding:"2px 7px",borderRadius:5,background:`${gc(s,AI_COLORS)}15`,border:`1px solid ${gc(s,AI_COLORS)}30`,color:gc(s,AI_COLORS),fontWeight:600}}>⚡ {s}</span>)}</div>}
-                <textarea placeholder="Add notes (interview date, contact name, follow-up reminder...)" value={notes[i]||job.notes||""} onChange={e=>setNotes(n=>({...n,[i]:e.target.value}))} style={{width:"100%",background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)",borderRadius:7,padding:"7px 10px",color:"#94a3b8",fontSize:11,fontFamily:"'DM Sans',sans-serif",resize:"vertical",minHeight:48,marginTop:8,boxSizing:"border-box"}}/>
-              </div>
-              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0}}>
-                <a href={buildUrl(job)} target="_blank" rel="noopener noreferrer" className="apply-btn" style={{background:"linear-gradient(135deg,#06b6d4,#0284c7)",color:"#fff",border:"none",borderRadius:9,padding:"8px 16px",fontSize:12,fontWeight:700,cursor:"pointer",textDecoration:"none",display:"flex",alignItems:"center",gap:5,fontFamily:"inherit",whiteSpace:"nowrap",boxShadow:"0 0 12px rgba(6,182,212,.25)"}}>
-                  Apply Now <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1={10} y1={14} x2={21} y2={3}/></svg>
-                </a>
-                <button onClick={()=>onTrack(job)} style={{background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.2)",color:"#a78bfa",borderRadius:8,padding:"5px 12px",fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>+ Track App</button>
-                <button onClick={()=>onRemove(job)} style={{background:"rgba(248,113,113,.06)",border:"1px solid rgba(248,113,113,.15)",color:"#f87171",borderRadius:8,padding:"4px 10px",fontSize:10,cursor:"pointer",fontFamily:"inherit"}}>Remove</button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+function renderJobList() {
+  let list = allJobs.filter(j => remoteFilter==='all'?true:remoteFilter==='remote'?j.remote:!j.remote);
+  if (sortMode==='salary') list.sort((a,b)=>(parseInt((b.salary||'0').replace(/[^0-9]/g,''))||0)-(parseInt((a.salary||'0').replace(/[^0-9]/g,''))||0));
+  const remote = allJobs.filter(j=>j.remote).length;
+  const withSal = allJobs.filter(j=>j.salary&&j.salary!=='Not Listed').length;
+  document.getElementById('stats-grid').style.display = 'grid';
+  document.getElementById('filters-row').style.display = 'flex';
+  document.getElementById('s-total').textContent = allJobs.length;
+  document.getElementById('s-remote').textContent = remote;
+  document.getElementById('s-h1b').textContent = allJobs.length;
+  document.getElementById('s-salary').textContent = withSal;
+  document.getElementById('result-count').textContent = list.length + ' positions';
+  document.getElementById('job-list').innerHTML = list.map((j,i)=>renderCard(j,i,'search')).join('');
 }
 
-// ─── APPLICATION TRACKER TAB ──────────────────────────────────────────────────
-function TrackerTab({apps,onUpdate,onRemove}) {
-  const [filter,setFilter]=useState("All");
-  const cols=["Applied","Phone Screen","Tech Round","Final Round","Offer","Rejected","Ghosted"];
+function setRemote(val, btn) {
+  remoteFilter = val;
+  document.querySelectorAll('.filter-chips .chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  renderJobList();
+}
+function setSort(val) { sortMode = val; renderJobList(); }
 
-  const filtered=filter==="All"?apps:apps.filter(a=>a.status===filter);
-
-  if(!apps.length) return(
-    <div style={{textAlign:"center",padding:"60px 0",color:"#334155"}}>
-      <div style={{fontSize:40,marginBottom:12}}>📊</div>
-      <p style={{fontSize:14,color:"#475569"}}>No applications tracked yet.</p>
-      <p style={{fontSize:12,color:"#334155"}}>Click <strong style={{color:"#a78bfa"}}>+ Track</strong> on any job card to start tracking.</p>
-    </div>
-  );
-
-  const counts=ALL_STATUSES.reduce((acc,s)=>({...acc,[s]:apps.filter(a=>a.status===s).length}),{});
-
-  return(
-    <div>
-      {/* Summary strip */}
-      <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:18}}>
-        {["All",...cols].map(s=>{
-          const cfg=STATUS_CONFIG[s]||{color:"#06b6d4",bg:"rgba(6,182,212,.12)",emoji:"📋"};
-          const cnt=s==="All"?apps.length:(counts[s]||0);
-          return(
-            <button key={s} onClick={()=>setFilter(s)} style={{background:filter===s?cfg.bg:"transparent",border:`1px solid ${filter===s?cfg.color:"rgba(255,255,255,.07)"}`,color:filter===s?cfg.color:"#475569",borderRadius:8,padding:"5px 12px",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
-              {cfg.emoji} {s} {cnt>0&&<span style={{fontSize:10,background:filter===s?cfg.color:"rgba(255,255,255,.08)",color:filter===s?"#000":"#475569",borderRadius:20,padding:"0 5px",fontWeight:700}}>{cnt}</span>}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Table */}
-      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-        {filtered.length===0&&<div style={{textAlign:"center",padding:"32px 0",color:"#334155",fontSize:13}}>No applications with status "{filter}"</div>}
-        {filtered.map((app,i)=>{
-          const cfg=STATUS_CONFIG[app.status]||STATUS_CONFIG["Applied"];
-          return(
-            <div key={i} className="card" style={{background:"#070e1c",border:"1px solid rgba(255,255,255,.05)",borderLeft:`3px solid ${cfg.color}`,borderRadius:12,padding:"14px 18px",animationDelay:`${i*.04}s`}}>
-              <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:4,flexWrap:"wrap"}}>
-                    <span style={{fontSize:14,fontWeight:600,color:"#f1f5f9"}}>{app.title}</span>
-                    <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,fontWeight:700,background:cfg.bg,border:`1px solid ${cfg.color}30`,color:cfg.color}}>{cfg.emoji} {app.status}</span>
-                  </div>
-                  <div style={{display:"flex",gap:12,flexWrap:"wrap",fontSize:11,marginBottom:8}}>
-                    <span style={{color:"#5a7a9e",fontWeight:500}}>🏢 {app.company}</span>
-                    <span style={{color:"#334155"}}>📍 {app.location}</span>
-                    {app.salary&&app.salary!=="Not Listed"&&<span style={{color:"#34d399",fontWeight:600}}>💰 {app.salary}</span>}
-                    <span style={{color:"#1e3a5f"}}>📅 Applied: {app.appliedDate||"—"}</span>
-                    <span style={{color:"#112240",fontFamily:"'Space Mono'",fontSize:9.5}}>via {app.source}</span>
-                  </div>
-                  {app.notes&&<p style={{margin:"0 0 4px",fontSize:11,color:"#64748b",fontStyle:"italic"}}>📝 {app.notes}</p>}
-                </div>
-                <div style={{display:"flex",flexDirection:"column",gap:6,flexShrink:0,alignItems:"flex-end"}}>
-                  <select value={app.status} onChange={e=>onUpdate(app,{status:e.target.value})} style={{background:"#0a1628",border:`1px solid ${cfg.color}40`,color:cfg.color,borderRadius:7,padding:"4px 8px",fontSize:11,cursor:"pointer",fontFamily:"inherit",fontWeight:600}}>
-                    {ALL_STATUSES.map(s=><option key={s} value={s}>{STATUS_CONFIG[s].emoji} {s}</option>)}
-                  </select>
-                  <a href={buildUrl(app)} target="_blank" rel="noopener noreferrer" style={{background:"rgba(6,182,212,.1)",border:"1px solid rgba(6,182,212,.2)",color:"#06b6d4",borderRadius:7,padding:"4px 10px",fontSize:10,fontWeight:600,textDecoration:"none",display:"flex",alignItems:"center",gap:4,fontFamily:"inherit"}}>
-                    View Job ↗
-                  </a>
-                  <button onClick={()=>onRemove(app)} style={{background:"transparent",border:"1px solid rgba(248,113,113,.15)",color:"#f87171",borderRadius:7,padding:"3px 8px",fontSize:10,cursor:"pointer",fontFamily:"inherit"}}>Remove</button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Offer pipeline stats */}
-      {apps.length>0&&(
-        <div style={{marginTop:20,background:"#060e1c",border:"1px solid rgba(255,255,255,.05)",borderRadius:12,padding:"14px 18px"}}>
-          <p style={{margin:"0 0 10px",fontSize:11,color:"#475569",fontFamily:"'Space Mono'"}}>PIPELINE OVERVIEW</p>
-          <div style={{display:"flex",gap:2,height:8,borderRadius:4,overflow:"hidden",marginBottom:8}}>
-            {cols.map(s=>{const pct=(counts[s]||0)/apps.length*100;const cfg=STATUS_CONFIG[s];return pct>0?<div key={s} style={{width:`${pct}%`,background:cfg.color,transition:"width .3s"}}/>:null;})}
-          </div>
-          <div style={{display:"flex",gap:10,flexWrap:"wrap",fontSize:10,color:"#475569"}}>
-            {cols.map(s=>counts[s]>0?<span key={s} style={{color:STATUS_CONFIG[s].color}}>{STATUS_CONFIG[s].emoji} {s}: {counts[s]}</span>:null)}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+// ── SAVE / TRACK ───────────────────────────────────────────────────────────────
+function toggleSave(jobStr) {
+  const job = JSON.parse(jobStr);
+  const id = String(job.id||job.title+job.company);
+  const idx = savedJobs.findIndex(j=>String(j.id||j.title+j.company)===id);
+  if (idx>=0) savedJobs.splice(idx,1); else savedJobs.push(job);
+  saveLS('jr_saved',savedJobs); updateCounts(); renderJobList();
+}
+function removeSaved(id) {
+  savedJobs = savedJobs.filter(j=>String(j.id||j.title+j.company)!==id);
+  saveLS('jr_saved',savedJobs); updateCounts(); renderSaved();
+}
+function saveNote(id, val) {
+  const j = savedJobs.find(j=>String(j.id||j.title+j.company)===id);
+  if (j) { j.notes=val; saveLS('jr_saved',savedJobs); }
+}
+function trackJob(jobStr) {
+  const job = JSON.parse(jobStr);
+  const id = String(job.id||job.title+job.company);
+  if (appJobs.some(j=>String(j.id||j.title+j.company)===id)) { switchTab('tracker'); return; }
+  appJobs.push({...job, status:'Applied', appliedDate:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), notes:''});
+  saveLS('jr_apps',appJobs); updateCounts(); switchTab('tracker');
+}
+function updateStatus(id, val) {
+  const j = appJobs.find(j=>String(j.id||j.title+j.company)===id);
+  if (j) { j.status=val; saveLS('jr_apps',appJobs); renderTracker(); }
+}
+function removeApp(id) {
+  appJobs = appJobs.filter(j=>String(j.id||j.title+j.company)!==id);
+  saveLS('jr_apps',appJobs); updateCounts(); renderTracker();
 }
 
-// ─── SALARY TAB ───────────────────────────────────────────────────────────────
-function SalaryTab() {
-  const [role,setRole]=useState("Senior Data Engineer");
-  const [custom,setCustom]=useState("");
-  const [data,setData]=useState(null);
-  const [loading,setLoading]=useState(false);
-  const [error,setError]=useState(null);
-
-  const search=async()=>{
-    const target=custom.trim()||role;
-    setLoading(true);setError(null);setData(null);
-    try{
-      const prompt=SALARY_PROMPT.replace(/\[ROLE\]/g,target).replace("[COMPANY_TYPE]","enterprise startup mid-size");
-      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,system:prompt,tools:[{type:"web_search_20250305",name:"web_search"}],messages:[{role:"user",content:`Find current 2025 salary data for "${target}" in Dallas TX. Search levels.fyi, Glassdoor, LinkedIn, Indeed. Return only the JSON object.`}]})});
-      if(!res.ok) throw new Error(`API error ${res.status}`);
-      const d=await res.json();
-      const raw=(d.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
-      const m=raw.match(/\{[\s\S]*\}/);
-      if(!m) throw new Error("Could not parse salary data.");
-      setData(JSON.parse(m[0]));
-    }catch(e){setError(e.message);}finally{setLoading(false);}
-  };
-
-  const LEVEL_COLORS=["#60a5fa","#34d399","#f59e0b","#f472b6"];
-
-  return(
-    <div>
-      {/* Search */}
-      <div style={{background:"linear-gradient(135deg,#09162b,#070f1e)",border:"1px solid rgba(6,182,212,.15)",borderRadius:14,padding:"18px 22px",marginBottom:18}}>
-        <p style={{margin:"0 0 12px",fontSize:11,color:"#475569",fontFamily:"'Space Mono'"}}>RESEARCH SALARY FOR ROLE</p>
-        <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"flex-end"}}>
-          <div style={{flex:1,minWidth:200}}>
-            <div style={{fontSize:9,color:"#1e3a5f",fontFamily:"'Space Mono'",letterSpacing:"1px",marginBottom:5}}>PRESET ROLES</div>
-            <select value={role} onChange={e=>{setRole(e.target.value);setCustom("");}} style={{width:"100%",background:"rgba(6,182,212,.04)",border:"1px solid rgba(6,182,212,.1)",borderRadius:8,padding:"8px 11px",fontSize:12,color:"#94a3b8",fontFamily:"inherit",cursor:"pointer"}}>
-              {SALARY_ROLES.map(r=><option key={r} value={r}>{r}</option>)}
-            </select>
-          </div>
-          <div style={{flex:1,minWidth:200}}>
-            <div style={{fontSize:9,color:"#1e3a5f",fontFamily:"'Space Mono'",letterSpacing:"1px",marginBottom:5}}>OR CUSTOM ROLE</div>
-            <input value={custom} onChange={e=>setCustom(e.target.value)} placeholder="e.g. AI Data Platform Engineer" style={{width:"100%",background:"rgba(6,182,212,.04)",border:"1px solid rgba(6,182,212,.1)",borderRadius:8,padding:"8px 11px",fontSize:12,color:"#94a3b8",fontFamily:"inherit",boxSizing:"border-box"}}/>
-          </div>
-          <button onClick={search} disabled={loading} style={{background:loading?"#0d1e35":"linear-gradient(135deg,#06b6d4,#7c3aed)",border:"none",borderRadius:10,padding:"8px 18px",color:loading?"#1e3a5f":"#fff",fontWeight:700,fontSize:13,cursor:loading?"not-allowed":"pointer",fontFamily:"inherit",whiteSpace:"nowrap",boxShadow:loading?"none":"0 0 16px rgba(6,182,212,.2)",display:"flex",alignItems:"center",gap:7}}>
-            {loading?<><span style={{width:13,height:13,border:"2px solid #1e3a5f",borderTopColor:"#06b6d4",borderRadius:"50%",animation:"spin 1s linear infinite",display:"inline-block"}}/>Researching...</>:<>💰 Get Salaries</>}
-          </button>
-        </div>
-      </div>
-
-      {error&&<div style={{background:"rgba(239,68,68,.07)",border:"1px solid rgba(239,68,68,.2)",borderRadius:10,padding:"10px 14px",color:"#f87171",fontSize:12.5,marginBottom:14}}>⚠️ {error}</div>}
-
-      {loading&&(
-        <div style={{textAlign:"center",padding:"40px 0"}}>
-          <div style={{fontSize:36,marginBottom:12,animation:"pulse 1.5s ease-in-out infinite"}}>💰</div>
-          <p style={{fontFamily:"'Space Mono'",fontSize:12,color:"#06b6d4"}}>Scanning Levels.fyi · Glassdoor · LinkedIn · Indeed...</p>
-        </div>
-      )}
-
-      {data&&(
-        <div style={{display:"flex",flexDirection:"column",gap:14}}>
-          {/* Header */}
-          <div style={{background:"linear-gradient(135deg,#09162b,#070f1e)",border:"1px solid rgba(6,182,212,.15)",borderRadius:13,padding:"16px 20px"}}>
-            <h2 style={{margin:"0 0 4px",fontSize:17,fontWeight:700,color:"#f1f5f9"}}>{data.role}</h2>
-            <p style={{margin:0,fontSize:11,color:"#475569"}}>📍 {data.location} · As of {data.asOf}</p>
-          </div>
-
-          {/* Salary ranges */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:10}}>
-            {data.ranges?.map((r,i)=>(
-              <div key={i} style={{background:"#070e1c",border:`1px solid ${LEVEL_COLORS[i]}25`,borderLeft:`3px solid ${LEVEL_COLORS[i]}`,borderRadius:12,padding:"14px 16px",animation:"fadeUp .3s ease both",animationDelay:`${i*.07}s`}}>
-                <p style={{margin:"0 0 8px",fontSize:10,color:"#475569",fontFamily:"'Space Mono'",letterSpacing:".5px"}}>{r.level?.toUpperCase()}</p>
-                <div style={{margin:"0 0 4px",fontSize:18,fontWeight:700,color:LEVEL_COLORS[i],fontFamily:"'Space Mono'"}}>{r.base}</div>
-                <div style={{margin:"0 0 8px",fontSize:11,color:"#64748b"}}>Total comp: <strong style={{color:"#94a3b8"}}>{r.total}</strong></div>
-                {r.notes&&<p style={{margin:0,fontSize:10.5,color:"#475569",fontStyle:"italic"}}>{r.notes}</p>}
-              </div>
-            ))}
-          </div>
-
-          {/* Your position highlight */}
-          <div style={{background:"rgba(52,211,153,.06)",border:"1px solid rgba(52,211,153,.2)",borderRadius:12,padding:"14px 18px"}}>
-            <p style={{margin:"0 0 6px",fontSize:11,color:"#34d399",fontWeight:700,fontFamily:"'Space Mono'"}}>🎯 YOUR POSITION — NIKHIL BOORLA (13 YRS EXP · LEAD/SENIOR)</p>
-            <p style={{margin:"0 0 4px",fontSize:13,color:"#f1f5f9"}}>You fall in the <strong style={{color:"#34d399"}}>Lead/Staff (10+ yrs)</strong> bracket. Your target of $150K is {data.ranges?.[3]?"within market range — push for the top of the band or above.":"reasonable for Dallas."}</p>
-            {data.negotiationTip&&<p style={{margin:"4px 0 0",fontSize:11.5,color:"#6ee7b7"}}>💡 {data.negotiationTip}</p>}
-          </div>
-
-          {/* Top payers */}
-          {data.topPayers?.length>0&&(
-            <div style={{background:"#070e1c",border:"1px solid rgba(255,255,255,.05)",borderRadius:12,padding:"14px 18px"}}>
-              <p style={{margin:"0 0 10px",fontSize:10,color:"#475569",fontFamily:"'Space Mono'"}}>TOP PAYING COMPANIES — DALLAS AREA</p>
-              <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                {data.topPayers.map((c,i)=>(
-                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}>
-                    <span style={{fontSize:12.5,color:"#94a3b8",fontWeight:500}}>{c.company}</span>
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>
-                      <span style={{fontSize:12,color:"#34d399",fontWeight:700,fontFamily:"'Space Mono'"}}>{c.range}</span>
-                      {c.notes&&<span style={{fontSize:10,color:"#475569",fontStyle:"italic"}}>{c.notes}</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* AI skill premiums */}
-          {data.hotSkillsBonus?.length>0&&(
-            <div style={{background:"#070e1c",border:"1px solid rgba(255,255,255,.05)",borderRadius:12,padding:"14px 18px"}}>
-              <p style={{margin:"0 0 10px",fontSize:10,color:"#475569",fontFamily:"'Space Mono'"}}>AI SKILL SALARY PREMIUMS</p>
-              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                {data.hotSkillsBonus.map((s,i)=>(
-                  <div key={i} style={{background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.2)",borderRadius:9,padding:"8px 14px",textAlign:"center"}}>
-                    <div style={{fontSize:12,fontWeight:700,color:"#a78bfa"}}>+{s.premiumPct}</div>
-                    <div style={{fontSize:10,color:"#64748b",marginTop:2}}>⚡ {s.skill}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* H1B notes */}
-          {data.h1bNotes&&(
-            <div style={{background:"rgba(6,182,212,.05)",border:"1px solid rgba(6,182,212,.18)",borderRadius:10,padding:"12px 16px",fontSize:12,color:"#7dd3fc"}}>
-              🛂 <strong>H1B Note:</strong> {data.h1bNotes}
-            </div>
-          )}
-
-          {data.sources?.length>0&&<p style={{fontSize:10,color:"#1e3a5f",margin:"4px 0 0",fontFamily:"'Space Mono'"}}>Sources: {data.sources.join(" · ")}</p>}
-        </div>
-      )}
-
-      {!data&&!loading&&!error&&(
-        <div style={{textAlign:"center",padding:"48px 0",color:"#334155"}}>
-          <div style={{fontSize:40,marginBottom:10}}>💰</div>
-          <p style={{fontSize:13,color:"#475569"}}>Select a role above and click <strong style={{color:"#06b6d4"}}>Get Salaries</strong></p>
-          <p style={{fontSize:11,color:"#334155",marginTop:4}}>Pulls live data from Levels.fyi · Glassdoor · LinkedIn · Indeed</p>
-        </div>
-      )}
-    </div>
-  );
+// ── RENDER SAVED ───────────────────────────────────────────────────────────────
+function renderSaved() {
+  const el = document.getElementById('saved-list');
+  const emp = document.getElementById('saved-empty');
+  if (!savedJobs.length) { el.innerHTML=''; emp.style.display='block'; return; }
+  emp.style.display='none';
+  el.innerHTML = savedJobs.map((j,i)=>renderCard(j,i,'saved')).join('');
 }
 
-// ─── ROOT APP ─────────────────────────────────────────────────────────────────
-function JobRadarPro() {
-  const [tab,setTab]=useState("search");
-  const [saved,setSaved]=useState([]);
-  const [apps,setApps]=useState([]);
+// ── RENDER TRACKER ─────────────────────────────────────────────────────────────
+function renderTracker() {
+  const el = document.getElementById('tracker-content');
+  const emp = document.getElementById('tracker-empty');
+  if (!appJobs.length) { el.innerHTML=''; emp.style.display='block'; return; }
+  emp.style.display='none';
 
-  // Load from storage on mount
-  useEffect(()=>{
-    (async()=>{
-      const s=await store.get("jr_saved"); if(s) setSaved(s);
-      const a=await store.get("jr_apps");  if(a) setApps(a);
-    })();
-  },[]);
+  const statuses = Object.keys(STATUS_CONFIG);
+  const counts = {};
+  statuses.forEach(s=>counts[s]=(appJobs.filter(j=>j.status===s).length));
 
-  const savedIds=new Set(saved.map(j=>String(j.id??j.title+j.company)));
-  const appliedIds=new Set(apps.map(j=>String(j.id??j.title+j.company)));
+  // Status filter strip
+  let strip = `<div class="status-strip">
+    <button class="status-chip" style="border-color:rgba(6,182,212,.3);color:#06b6d4;background:rgba(6,182,212,.1)" onclick="filterTracker('All',this)">📋 All <span style="background:#06b6d4;color:#000;border-radius:20px;padding:0 5px;font-size:10px">${appJobs.length}</span></button>
+    ${statuses.map(s=>`<button class="status-chip" onclick="filterTracker('${s}',this)">${STATUS_CONFIG[s].emoji} ${s}${counts[s]>0?` <span style="background:${STATUS_CONFIG[s].color};color:#000;border-radius:20px;padding:0 5px;font-size:10px">${counts[s]}</span>`:''}</button>`).join('')}
+  </div>`;
 
-  const saveJob=async(job)=>{
-    const key=String(job.id??job.title+job.company);
-    if(savedIds.has(key)){const next=saved.filter(j=>String(j.id??j.title+j.company)!==key);setSaved(next);await store.set("jr_saved",next);}
-    else{const next=[...saved,job];setSaved(next);await store.set("jr_saved",next);}
-  };
+  // Pipeline bar
+  const barSegs = statuses.map(s => {
+    const pct = (counts[s]||0)/appJobs.length*100;
+    return pct>0?`<div class="pipe-seg" style="width:${pct}%;background:${STATUS_CONFIG[s].color}"></div>`:'';
+  }).join('');
+  const legend = statuses.filter(s=>counts[s]>0).map(s=>`<span style="color:${STATUS_CONFIG[s].color}">${STATUS_CONFIG[s].emoji} ${s}: ${counts[s]}</span>`).join('');
 
-  const trackApp=async(job)=>{
-    const key=String(job.id??job.title+job.company);
-    if(appliedIds.has(key)) return;
-    const app={...job,status:"Applied",appliedDate:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),notes:""};
-    const next=[...apps,app]; setApps(next); await store.set("jr_apps",next);
-    setTab("tracker");
-  };
-
-  const updateApp=async(app,changes)=>{
-    const next=apps.map(a=>a===app?{...a,...changes}:a); setApps(next); await store.set("jr_apps",next);
-  };
-
-  const removeApp=async(app)=>{
-    const next=apps.filter(a=>a!==app); setApps(next); await store.set("jr_apps",next);
-  };
-
-  const removeSaved=async(job)=>{
-    const next=saved.filter(j=>j!==job); setSaved(next); await store.set("jr_saved",next);
-  };
-
-  const TABS=[
-    {id:"search",  label:"Job Search",   emoji:"🔍", count:null},
-    {id:"saved",   label:"Saved",        emoji:"🔖", count:saved.length},
-    {id:"tracker", label:"Applications", emoji:"📊", count:apps.length},
-    {id:"salary",  label:"Salary Intel", emoji:"💰", count:null},
-  ];
-
-  return(
-    <div style={{minHeight:"100vh",background:"#030810",color:"#e2e8f0",fontFamily:"'DM Sans',sans-serif",overflowX:"hidden"}}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
-        *{box-sizing:border-box}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-        @keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
-        @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-        .card{animation:fadeUp .3s ease both;transition:transform .15s,box-shadow .15s}
-        .card:hover{transform:translateY(-2px);box-shadow:0 16px 48px rgba(0,0,0,.5)!important}
-        .apply-btn{transition:all .15s}
-        .apply-btn:hover{filter:brightness(1.15);transform:scale(1.03)}
-        .shimmer{background:linear-gradient(90deg,#0a1628 25%,#112240 50%,#0a1628 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
-        .grid-bg{background-image:linear-gradient(rgba(6,182,212,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(6,182,212,.025) 1px,transparent 1px);background-size:44px 44px}
-        ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#030810}::-webkit-scrollbar-thumb{background:#1a3a5c;border-radius:3px}
-        select option{background:#0a1628}
-        input::placeholder,textarea::placeholder{color:#334155}
-      `}</style>
-
-      {/* HEADER */}
-      <div className="grid-bg" style={{borderBottom:"1px solid rgba(6,182,212,.1)",background:"linear-gradient(180deg,#07101f,transparent)",padding:"16px 20px 14px"}}>
-        <div style={{maxWidth:1060,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <div style={{width:32,height:32,borderRadius:9,background:"linear-gradient(135deg,#06b6d4,#7c3aed)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,boxShadow:"0 0 16px rgba(6,182,212,.4)"}}>⚡</div>
-            <div>
-              <div style={{fontSize:16,fontWeight:700,letterSpacing:"-.4px",background:"linear-gradient(120deg,#f1f5f9,#06b6d4 55%,#a78bfa)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:1.2}}>
-                JobRadar Pro <span style={{fontFamily:"'Space Mono'",fontSize:9.5,WebkitTextFillColor:"#334155"}}>H1B · AI · DALLAS</span>
-              </div>
-              <div style={{fontSize:9,color:"#1e3a5f",fontFamily:"'Space Mono'",letterSpacing:".5px",marginTop:1}}>NIKHIL BOORLA · FULL-TIME ONLY · RECENT FIRST</div>
-            </div>
+  const cards = appJobs.map((job,i)=>{
+    const id = String(job.id||job.title+job.company);
+    const cfg = STATUS_CONFIG[job.status]||STATUS_CONFIG['Applied'];
+    const opts = statuses.map(s=>`<option value="${s}" ${job.status===s?'selected':''}>${STATUS_CONFIG[s].emoji} ${s}</option>`).join('');
+    return `
+    <div class="job-card fade" style="border-left-color:${cfg.color};animation-delay:${i*.04}s">
+      <div class="card-inner">
+        <div class="card-left">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap">
+            <span class="job-title">${job.title}</span>
+            <span class="badge" style="background:${cfg.color}12;border:1px solid ${cfg.color}30;color:${cfg.color}">${cfg.emoji} ${job.status}</span>
           </div>
-          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-            {["🚫 No Citizenship","🚫 No Contract","✅ H1B til Jul'27","✅ $150K+ Target"].map((b,i)=>(
-              <span key={i} style={{fontSize:9,padding:"2px 7px",borderRadius:20,fontWeight:600,background:b.startsWith("✅")?"rgba(52,211,153,.07)":"rgba(248,113,113,.07)",border:`1px solid ${b.startsWith("✅")?"rgba(52,211,153,.18)":"rgba(248,113,113,.15)"}`,color:b.startsWith("✅")?"#34d399":"#f87171"}}>{b}</span>
-            ))}
+          <div class="job-meta">
+            <span style="color:#5a7a9e;font-weight:500">🏢 ${job.company}</span>
+            <span>📍 ${job.location||''}</span>
+            ${job.salary&&job.salary!=='Not Listed'?`<span class="salary">💰 ${job.salary}</span>`:''}
+            <span>📅 ${job.appliedDate||'—'}</span>
+            <span style="color:#112240;font-family:'Space Mono';font-size:9.5px">via ${job.source||''}</span>
           </div>
+          ${job.notes?`<p style="font-size:11px;color:#64748b;font-style:italic;margin-top:4px">📝 ${job.notes}</p>`:''}
+        </div>
+        <div class="card-right">
+          <select style="background:#0a1628;border:1px solid ${cfg.color}40;color:${cfg.color};border-radius:7px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600" onchange="updateStatus('${id}',this.value)">${opts}</select>
+          <a href="${buildUrl(job)}" target="_blank" style="background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.2);color:#06b6d4;border-radius:7px;padding:4px 10px;font-size:10px;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:4px;font-family:inherit">View Job ↗</a>
+          <button class="remove-btn" onclick="removeApp('${id}')">Remove</button>
         </div>
       </div>
+    </div>`;
+  }).join('');
 
-      {/* NAV TABS */}
-      <div style={{borderBottom:"1px solid rgba(255,255,255,.05)",background:"#050c18",padding:"0 20px"}}>
-        <div style={{maxWidth:1060,margin:"0 auto",display:"flex",gap:2}}>
-          {TABS.map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{background:"none",border:"none",borderBottom:`2px solid ${tab===t.id?"#06b6d4":"transparent"}`,color:tab===t.id?"#06b6d4":"#475569",padding:"12px 16px",fontSize:12.5,fontWeight:tab===t.id?700:500,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5,transition:"all .15s",whiteSpace:"nowrap"}}>
-              {t.emoji} {t.label}
-              {t.count!=null&&t.count>0&&<span style={{background:tab===t.id?"#06b6d4":"rgba(255,255,255,.08)",color:tab===t.id?"#000":"#475569",borderRadius:20,padding:"0 6px",fontSize:10,fontWeight:700}}>{t.count}</span>}
-            </button>
-          ))}
-        </div>
-      </div>
+  el.innerHTML = strip + cards + `<div style="margin-top:20px;background:#060e1c;border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:14px 18px">
+    <p style="font-size:10px;color:#475569;font-family:'Space Mono';margin-bottom:10px">PIPELINE OVERVIEW</p>
+    <div class="pipeline-bar">${barSegs}</div>
+    <div class="pipe-legend">${legend}</div>
+  </div>`;
 
-      {/* CONTENT */}
-      <div style={{maxWidth:1060,margin:"0 auto",padding:"20px 18px"}}>
-        {tab==="search"  && <SearchTab savedIds={savedIds} appliedIds={appliedIds} onSave={saveJob} onTrack={trackApp}/>}
-        {tab==="saved"   && <SavedTab saved={saved} onRemove={removeSaved} onTrack={trackApp}/>}
-        {tab==="tracker" && <TrackerTab apps={apps} onUpdate={updateApp} onRemove={removeApp}/>}
-        {tab==="salary"  && <SalaryTab/>}
-      </div>
-
-      <div style={{maxWidth:1060,margin:"0 auto",padding:"0 18px 20px",display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:6,borderTop:"1px solid rgba(255,255,255,.03)",paddingTop:14,marginTop:8}}>
-        <span style={{fontSize:9,color:"#0d2137",fontFamily:"'Space Mono'"}}>JOBRADAR PRO · NIKHIL BOORLA · H1B · DALLAS 75234 · 2025</span>
-        <span style={{fontSize:9,color:"#081524"}}>Powered by Claude AI + Live Web Search</span>
-      </div>
-    </div>
-  );
+  document.getElementById('tracker-filter-val') && filterTracker(document.getElementById('tracker-filter-val').value);
 }
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<JobRadarPro/>);
-  </script>
+let trackerFilter = 'All';
+function filterTracker(val, btn) {
+  trackerFilter = val;
+  document.querySelectorAll('.status-chip').forEach(c=>c.style.background='transparent');
+  if(btn) btn.style.background = 'rgba(255,255,255,.06)';
+  renderTracker();
+}
+
+// ── SALARY ─────────────────────────────────────────────────────────────────────
+const SAL_PROMPT = `You are a compensation research expert. Use web_search to find CURRENT 2025 salary data for the specified role in Dallas TX. Search levels.fyi, Glassdoor, LinkedIn, Indeed, Glassdoor, ZipRecruiter. Return ONLY a raw JSON object (no markdown, no code fences):
+{"role":"string","location":"Dallas, TX","asOf":"2025","ranges":[{"level":"Entry (0-3 yrs)","base":"$X-$Y","total":"$X-$Y","notes":"string"},{"level":"Mid (3-6 yrs)","base":"$X-$Y","total":"$X-$Y","notes":"string"},{"level":"Senior (6-10 yrs)","base":"$X-$Y","total":"$X-$Y","notes":"string"},{"level":"Lead/Staff (10+ yrs)","base":"$X-$Y","total":"$X-$Y","notes":"string"}],"topPayers":[{"company":"string","range":"string","notes":"string"}],"hotSkillsBonus":[{"skill":"string","premiumPct":"string"}],"h1bNotes":"string","negotiationTip":"string","sources":["string"]}`;
+
+async function runSalary() {
+  const role = document.getElementById('salary-custom').value.trim() || document.getElementById('salary-role').value;
+  document.getElementById('salary-btn').disabled = true;
+  document.getElementById('salary-btn').innerHTML = '<span style="width:13px;height:13px;border:2px solid #1e3a5f;border-top-color:#06b6d4;border-radius:50%;animation:spin 1s linear infinite;display:inline-block"></span> Researching...';
+  document.getElementById('salary-error').style.display = 'none';
+  document.getElementById('salary-empty').style.display = 'none';
+  document.getElementById('salary-results').innerHTML = '';
+  document.getElementById('salary-loading').style.display = 'block';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:3000,system:SAL_PROMPT,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:`Find 2025 salary for "${role}" in Dallas TX. Search levels.fyi, Glassdoor, LinkedIn, Indeed. Return only the JSON object.`}]})});
+    if (!res.ok) throw new Error('API error '+res.status);
+    const d = await res.json();
+    const raw = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const m = raw.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('Could not parse salary data.');
+    renderSalary(JSON.parse(m[0]));
+  } catch(e) {
+    document.getElementById('salary-error').textContent = '⚠️ '+e.message;
+    document.getElementById('salary-error').style.display = 'block';
+    document.getElementById('salary-empty').style.display = 'block';
+  }
+  document.getElementById('salary-loading').style.display = 'none';
+  document.getElementById('salary-btn').disabled = false;
+  document.getElementById('salary-btn').innerHTML = '💰 Get Salaries';
+}
+
+function renderSalary(data) {
+  const BAND_COLORS = ['#60a5fa','#34d399','#f59e0b','#f472b6'];
+  const bands = (data.ranges||[]).map((r,i)=>`
+    <div class="salary-band fade" style="background:#070e1c;border:1px solid ${BAND_COLORS[i]}25;border-left:3px solid ${BAND_COLORS[i]};animation-delay:${i*.07}s">
+      <div class="salary-band-level">${(r.level||'').toUpperCase()}</div>
+      <div class="salary-band-base" style="color:${BAND_COLORS[i]}">${r.base||'N/A'}</div>
+      <div class="salary-band-total">Total comp: <strong style="color:#94a3b8">${r.total||'N/A'}</strong></div>
+      ${r.notes?`<p style="font-size:10.5px;color:#475569;font-style:italic">${r.notes}</p>`:''}
+    </div>`).join('');
+
+  const payers = (data.topPayers||[]).map(c=>`
+    <div class="payer-row">
+      <span style="color:#94a3b8;font-weight:500">${c.company}</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="color:#34d399;font-weight:700;font-family:'Space Mono'">${c.range}</span>
+        ${c.notes?`<span style="font-size:10px;color:#475569;font-style:italic">${c.notes}</span>`:''}
+      </div>
+    </div>`).join('');
+
+  const bonuses = (data.hotSkillsBonus||[]).map(s=>`
+    <div class="skill-bonus">
+      <div style="font-size:12px;font-weight:700;color:#a78bfa">+${s.premiumPct}</div>
+      <div style="font-size:10px;color:#64748b;margin-top:2px">⚡ ${s.skill}</div>
+    </div>`).join('');
+
+  document.getElementById('salary-results').innerHTML = `
+    <div style="background:linear-gradient(135deg,#09162b,#070f1e);border:1px solid rgba(6,182,212,.15);border-radius:13px;padding:16px 20px;margin-bottom:14px">
+      <h2 style="font-size:17px;font-weight:700;color:#f1f5f9;margin-bottom:4px">${data.role||''}</h2>
+      <p style="font-size:11px;color:#475569">📍 ${data.location||'Dallas, TX'} · As of ${data.asOf||'2025'}</p>
+    </div>
+    <div class="salary-grid">${bands}</div>
+    <div style="background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);border-radius:12px;padding:14px 18px;margin-bottom:12px">
+      <p style="font-size:11px;color:#34d399;font-weight:700;font-family:'Space Mono';margin-bottom:6px">🎯 YOUR POSITION — NIKHIL BOORLA (13 YRS · LEAD/SENIOR)</p>
+      <p style="font-size:13px;color:#f1f5f9">You fall in the <strong style="color:#34d399">Lead/Staff (10+ yrs)</strong> bracket. Your $150K target is within market range — <strong>push for the top of the band or above</strong> given your Humana healthcare AI experience.</p>
+      ${data.negotiationTip?`<p style="font-size:11.5px;color:#6ee7b7;margin-top:6px">💡 ${data.negotiationTip}</p>`:''}
+    </div>
+    ${payers?`<div class="top-payers"><p style="font-size:10px;color:#475569;font-family:'Space Mono';margin-bottom:10px">TOP PAYING COMPANIES — DALLAS</p>${payers}</div>`:''}
+    ${bonuses?`<div style="margin-bottom:12px"><p style="font-size:10px;color:#475569;font-family:'Space Mono';margin-bottom:10px">AI SKILL SALARY PREMIUMS</p><div class="skill-bonuses">${bonuses}</div></div>`:''}
+    ${data.h1bNotes?`<div style="background:rgba(6,182,212,.05);border:1px solid rgba(6,182,212,.18);border-radius:10px;padding:12px 16px;font-size:12px;color:#7dd3fc;margin-bottom:10px">🛂 <strong>H1B Note:</strong> ${data.h1bNotes}</div>`:''}
+    ${data.sources?.length?`<p style="font-size:10px;color:#1e3a5f;font-family:'Space Mono'">Sources: ${data.sources.join(' · ')}</p>`:''}
+  `;
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────────
+updateCounts();
+</script>
 </body>
 </html>
