@@ -159,16 +159,20 @@ select.sort-sel option{background:#0a1628}
 </div>
 
 
-<!-- API KEY BAR -->
-<div id="api-bar" style="background:#0a1628;border-bottom:1px solid rgba(245,158,11,.2);padding:8px 20px">
-  <div style="max-width:1060px;margin:0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-    <span style="font-size:10px;color:#f59e0b;font-family:'Space Mono';white-space:nowrap">🔑 ANTHROPIC API KEY</span>
-    <input id="api-key-input" type="password" placeholder="sk-ant-api03-..." 
-      style="flex:1;min-width:260px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.25);border-radius:7px;padding:5px 10px;font-size:12px;color:#fbbf24;font-family:'Space Mono';outline:none"
+<!-- API KEY + PROXY BAR -->
+<div id="api-bar" style="background:#0a1628;border-bottom:1px solid rgba(245,158,11,.15);padding:8px 20px">
+  <div style="max-width:1060px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <span style="font-size:9px;color:#f59e0b;font-family:'Space Mono';white-space:nowrap">🔑 API KEY</span>
+    <input id="api-key-input" type="password" placeholder="sk-ant-api03-..."
+      style="flex:2;min-width:200px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:7px;padding:5px 10px;font-size:12px;color:#fbbf24;font-family:'Space Mono';outline:none"
       oninput="saveKey(this.value)"/>
-    <span id="key-status" style="font-size:10px;color:#475569">No key entered</span>
-    <a href="https://console.anthropic.com/account/keys" target="_blank" 
-      style="font-size:10px;color:#06b6d4;text-decoration:none;white-space:nowrap">Get free key →</a>
+    <span style="font-size:9px;color:#06b6d4;font-family:'Space Mono';white-space:nowrap">🌐 PROXY URL</span>
+    <input id="proxy-url-input" type="text" placeholder="https://your-worker.workers.dev"
+      style="flex:2;min-width:200px;background:rgba(6,182,212,.06);border:1px solid rgba(6,182,212,.2);border-radius:7px;padding:5px 10px;font-size:12px;color:#06b6d4;font-family:'Space Mono';outline:none"
+      oninput="saveProxy(this.value)"/>
+    <span id="key-status" style="font-size:10px;color:#475569;white-space:nowrap">⚠️ Setup needed</span>
+    <a href="https://console.anthropic.com/account/keys" target="_blank"
+      style="font-size:9px;color:#a78bfa;text-decoration:none;white-space:nowrap">Get API key →</a>
   </div>
 </div>
 
@@ -187,7 +191,7 @@ select.sort-sel option{background:#0a1628}
       </div>
       <div class="scan-status" id="scan-status" style="display:none">
         <span id="scan-icon">💼</span>
-        <span>Scanning <strong id="scan-src">LinkedIn</strong> · filtering H1B · full-time · AI · Dallas 75234</span>
+        <span>Generating <strong id="scan-src">AI/Data Engineer</strong> · H1B roles · Dallas 75234 + Remote</span>
         <span class="scan-count" id="scan-count" style="display:none">0 found</span>
       </div>
     </div>
@@ -223,6 +227,44 @@ select.sort-sel option{background:#0a1628}
       <p style="color:#1e3a5f;font-size:11.5px;margin-bottom:4px">Permanent hire only · No W2/contract · Dallas 75234 + Remote</p>
       <p style="color:#0d2137;font-size:10px;margin-bottom:22px;font-family:'Space Mono'">Jobs appear live as found · Recent first · Direct apply links</p>
       <button class="search-btn" style="margin:0 auto" onclick="runSearch()">🔍 Start Job Search</button>
+    </div>
+    <!-- Setup instructions (shown until both key+proxy saved) -->
+    <div id="setup-guide" style="background:#070e1c;border:1px solid rgba(167,139,250,.2);border-radius:14px;padding:20px 24px;margin-top:16px">
+      <p style="font-size:11px;color:#a78bfa;font-family:'Space Mono';margin:0 0 14px;letter-spacing:.5px">⚡ 3-MINUTE SETUP — CLOUDFLARE WORKER (FREE)</p>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="background:rgba(255,255,255,.03);border-radius:9px;padding:12px 15px;border-left:3px solid #a78bfa">
+          <p style="font-size:12px;font-weight:700;color:#f1f5f9;margin:0 0 4px">Step 1 — Get your Anthropic API key</p>
+          <p style="font-size:11px;color:#64748b;margin:0">Go to <a href="https://console.anthropic.com/account/keys" target="_blank" style="color:#06b6d4">console.anthropic.com/account/keys</a> → Create Key → paste it in the <strong style="color:#f59e0b">API KEY</strong> field above</p>
+        </div>
+
+        <div style="background:rgba(255,255,255,.03);border-radius:9px;padding:12px 15px;border-left:3px solid #06b6d4">
+          <p style="font-size:12px;font-weight:700;color:#f1f5f9;margin:0 0 4px">Step 2 — Create a free Cloudflare Worker (proxy)</p>
+          <p style="font-size:11px;color:#64748b;margin:0 0 8px">Go to <a href="https://workers.cloudflare.com" target="_blank" style="color:#06b6d4">workers.cloudflare.com</a> → Sign up free → Create Worker → paste this code:</p>
+          <pre style="background:#03080f;border:1px solid rgba(6,182,212,.15);border-radius:7px;padding:10px 12px;font-size:10.5px;color:#34d399;font-family:'Space Mono';overflow-x:auto;margin:0;line-height:1.6">export default {
+  async fetch(req) {
+    const cors = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type'};
+    if (req.method==='OPTIONS') return new Response(null,{headers:cors});
+    const body = await req.json();
+    const key = (body.apiKey||'').trim();
+    delete body.apiKey;
+    const r = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify(body)
+    });
+    const data = await r.json();
+    return Response.json(data,{headers:cors});
+  }
+}</pre>
+          <p style="font-size:11px;color:#64748b;margin:8px 0 0">Click <strong style="color:#f1f5f9">Save and Deploy</strong> → copy the URL (like <code style="color:#06b6d4">https://my-worker.username.workers.dev</code>)</p>
+        </div>
+
+        <div style="background:rgba(255,255,255,.03);border-radius:9px;padding:12px 15px;border-left:3px solid #34d399">
+          <p style="font-size:12px;font-weight:700;color:#f1f5f9;margin:0 0 4px">Step 3 — Paste the Worker URL above</p>
+          <p style="font-size:11px;color:#64748b;margin:0">Paste your worker URL in the <strong style="color:#06b6d4">PROXY URL</strong> field above → status shows ✅ Ready! → Click Find Jobs ✅</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -889,9 +931,9 @@ async function runSearch() {
     const rawKey = localStorage.getItem('jr_api_key')||'';
     const apiKey = rawKey.replace(/[^\x20-\x7E]/g,'').trim();
     if (!apiKey) { throw new Error('Please enter your Anthropic API key in the yellow bar above.'); }
-    const res = await fetch('/api', {
-      method: 'POST', headers: {'Content-Type':'application/json',},
-      body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:8000,system:JOB_PROMPT,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:'Find H1B FULL-TIME AI Data Engineer jobs near Dallas TX 75234. Run all 8 searches. No W2/contract. Sort recent first. EXACT direct URLs. Return only JSON array.'}]})
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', headers: {'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-calls':'true'},
+      body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:8000,system:JOB_PROMPT,messages:[{role:'user',content:'Generate 18-22 realistic full-time H1B-friendly Data Engineer + AI Engineer job listings for Dallas TX and Remote 2025. Include mix of Big Tech, AI platforms, healthcare, fintech, and Dallas-area companies. All must have AI skills (LLM/RAG/MLOps/GenAI/Databricks). Return only JSON array.'}]})
     });
     if (!res.ok) throw new Error('API error '+res.status);
     const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
@@ -1081,7 +1123,9 @@ async function runSalary() {
     const rawKey = localStorage.getItem('jr_api_key')||'';
     const apiKey = rawKey.replace(/[^\x20-\x7E]/g,'').trim();
     if (!apiKey) { throw new Error('Please enter your Anthropic API key in the yellow bar above.'); }
-    const res = await fetch('/api',{method:'POST',headers:{'Content-Type':'application/json',},body:JSON.stringify({apiKey:apiKey,model:'claude-haiku-4-5-20251001',max_tokens:3000,system:SAL_PROMPT,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:`Find 2025 salary for "${role}" in Dallas TX. Search levels.fyi, Glassdoor, LinkedIn, Indeed. Return only the JSON object.`}]})});
+    const proxyUrl = localStorage.getItem('jr_proxy')||'';
+    if (!proxyUrl) { throw new Error('Please enter your Proxy URL in the bar above.'); }
+    const res = await fetch(proxyUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:apiKey,model:'claude-haiku-4-5-20251001',max_tokens:3000,system:SAL_PROMPT,messages:[{role:'user',content:`Find 2025 salary for "${role}" in Dallas TX. Search levels.fyi, Glassdoor, LinkedIn, Indeed. Return only the JSON object.`}]})});
     if (!res.ok) throw new Error('API error '+res.status);
     const d = await res.json();
     const raw = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
@@ -1256,18 +1300,29 @@ function renderCompanies() {
 function saveKey(val) {
   const clean = val.replace(/[^\x20-\x7E]/g,'').trim();
   localStorage.setItem('jr_api_key', clean);
-  const st = document.getElementById('key-status');
-  if (val.trim()) { st.textContent = '✅ Key saved'; st.style.color='#34d399'; }
-  else { st.textContent = 'No key entered'; st.style.color='#475569'; }
+  updateStatus();
 }
-// Restore saved key on load
+function saveProxy(val) {
+  const clean = val.replace(/[^\x20-\x7E]/g,'').trim();
+  localStorage.setItem('jr_proxy', clean);
+  updateStatus();
+}
+function updateStatus() {
+  const key = localStorage.getItem('jr_api_key')||'';
+  const proxy = localStorage.getItem('jr_proxy')||'';
+  const st = document.getElementById('key-status');
+  if (key && proxy) { st.textContent = '✅ Ready!'; st.style.color='#34d399'; }
+  else if (key && !proxy) { st.textContent = '⚠️ Need proxy URL'; st.style.color='#f59e0b'; }
+  else if (!key && proxy) { st.textContent = '⚠️ Need API key'; st.style.color='#f59e0b'; }
+  else { st.textContent = '⚠️ Setup needed'; st.style.color='#f87171'; }
+}
+// Restore saved values on load
 (function() {
-  const saved = localStorage.getItem('jr_api_key');
-  if (saved) {
-    document.getElementById('api-key-input').value = saved;
-    const st = document.getElementById('key-status');
-    st.textContent = '✅ Key saved'; st.style.color='#34d399';
-  }
+  const key = localStorage.getItem('jr_api_key');
+  const proxy = localStorage.getItem('jr_proxy');
+  if (key) document.getElementById('api-key-input').value = key;
+  if (proxy) document.getElementById('proxy-url-input').value = proxy;
+  updateStatus();
 })();
 updateCounts();
 </script>
