@@ -153,6 +153,8 @@ select.sort-sel option{background:#0a1628}
     <button class="nav-btn" onclick="switchTab('saved')">🔖 Saved <span class="nav-count" id="saved-count">0</span></button>
     <button class="nav-btn" onclick="switchTab('tracker')">📊 Applications <span class="nav-count" id="app-count">0</span></button>
     <button class="nav-btn" onclick="switchTab('salary')">💰 Salary Intel</button>
+    <button class="nav-btn" onclick="switchTab('companies')">🏢 Target Companies</button>
+    <button class="nav-btn" onclick="switchTab('boards')">🌐 Job Boards</button>
   </div>
 </div>
 
@@ -281,6 +283,394 @@ select.sort-sel option{background:#0a1628}
     </div>
   </div>
 
+
+  <!-- ── COMPANIES TAB ── -->
+  <div id="tab-companies" class="tab-panel">
+    <div style="background:linear-gradient(135deg,#09162b,#070f1e);border:1px solid rgba(6,182,212,.15);border-radius:14px;padding:16px 22px;margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+        <div>
+          <p style="font-size:10px;color:#475569;font-family:'Space Mono';margin-bottom:4px">H1B SPONSORING COMPANIES · AI & DATA ENGINEERING</p>
+          <p style="font-size:11px;color:#64748b">Under-the-radar companies with less competition than FAANG. All verified H1B sponsors.</p>
+        </div>
+        <span style="font-size:11px;font-family:'Space Mono';color:#06b6d4;background:rgba(6,182,212,.08);padding:3px 12px;border-radius:20px;border:1px solid rgba(6,182,212,.18)" id="co-count">50 companies</span>
+      </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <button class="chip active" onclick="filterCo('all',this)">All</button>
+        <button class="chip" onclick="filterCo('bigtech',this)">🚀 Big Tech</button>
+        <button class="chip" onclick="filterCo('aidata',this)">🗄️ AI/Data Platform</button>
+        <button class="chip" onclick="filterCo('mlops',this)">⚙️ MLOps/AI Infra</button>
+        <button class="chip" onclick="filterCo('fintech',this)">💳 Fintech</button>
+        <button class="chip" onclick="filterCo('healthcare',this)">🏥 Healthcare AI</button>
+        <button class="chip" onclick="filterCo('dallas',this)">📍 Dallas Area</button>
+        <button class="chip" onclick="filterCo('remote',this)">🌐 Remote-First</button>
+      </div>
+    </div>
+    <div id="co-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px"></div>
+  </div>
+
+
+  <!-- ── JOB BOARDS TAB ── -->
+  <div id="tab-boards" class="tab-panel">
+    <div style="background:linear-gradient(135deg,#09162b,#070f1e);border:1px solid rgba(6,182,212,.15);border-radius:14px;padding:16px 22px;margin-bottom:18px">
+      <p style="font-size:10px;color:#475569;font-family:'Space Mono';margin-bottom:4px">ALL JOB BOARDS IN ONE PLACE — CLICK TO SEARCH</p>
+      <p style="font-size:11px;color:#64748b">25 remote job boards + H1B-specific boards. Each opens pre-filtered for Data Engineer roles.</p>
+    </div>
+
+    <div style="margin-bottom:18px">
+      <p style="font-size:10px;color:#06b6d4;font-family:'Space Mono';margin-bottom:10px;letter-spacing:.5px">🌐 REMOTE-FIRST JOB BOARDS</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
+        <a href="https://wellfound.com/jobs/data-engineer?remote=true&visa=true" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#01</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Wellfound (AngelList)</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Startup jobs. Best for funded AI/data startups. Strong H1B culture.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">wellfound.com</span>
+    </a>
+<a href="https://arc.dev/remote-jobs/data-engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#02</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Arc.dev</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Vetted remote engineers. Pre-screened companies, faster hiring.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">arc.dev</span>
+    </a>
+<a href="https://builtin.com/jobs/remote?search=data+engineer&visa=h1b" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#03</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Built In Remote</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Tech-focused. Great for Dallas-area + remote. Filter by visa.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">builtin.com/jobs/remote</span>
+    </a>
+<a href="https://dailyremote.com/remote-data-engineer-jobs" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#04</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">DailyRemote</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Daily curated remote jobs. Good volume for data roles.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">dailyremote.com</span>
+    </a>
+<a href="https://www.flexjobs.com/search?search=data+engineer&location=Remote" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#05</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">FlexJobs</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Screened remote jobs. Subscription but high quality, no scams.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">flexjobs.com</span>
+    </a>
+<a href="https://hnhiring.com/?technologies=python,spark&locations=remote" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#06</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">HN Who's Hiring</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Hacker News monthly thread. Top YC/funded startups post here.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">news.ycombinator.com/jobs</span>
+    </a>
+<a href="https://himalayas.app/jobs/data-engineer?remote=true" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#07</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Himalayas</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Remote-only jobs. Clean UI, great filters, good data eng volume.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">himalayas.app</span>
+    </a>
+<a href="https://talent.hubstaff.com/search/jobs?q=data+engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#08</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Hubstaff Talent</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Free for job seekers. Direct contact with hiring managers.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">talent.hubstaff.com</span>
+    </a>
+<a href="https://justremote.co/remote-developer-jobs?title=data+engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#09</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">JustRemote</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Remote-only. Good for global/US remote data roles.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">justremote.co</span>
+    </a>
+<a href="https://nodesk.co/remote-jobs/data-engineer/" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#10</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">NoDesk</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">750+ remote companies. Company profiles with culture info.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">nodesk.co</span>
+    </a>
+<a href="https://www.welcometothejungle.com/en/jobs?occupation_category=data&remote=true" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#11</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Otta / Welcome to Jungle</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">European origin, strong US startup list. Great company culture cards.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">welcometothejungle.com</span>
+    </a>
+<a href="https://www.outsourcely.com/remote-data-engineer-jobs" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#12</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Outsourcely</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Remote startups. Direct contact. Good for AI/SaaS companies.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">outsourcely.com</span>
+    </a>
+<a href="https://pangian.com/job-travel-remote/?s=data+engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#13</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Pangian</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Global remote. Focus on tech & data roles with visa-open companies.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">pangian.com</span>
+    </a>
+<a href="https://remote.co/remote-jobs/search/?search_keywords=data+engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#14</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Remote.co</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Curated remote jobs. Good quality, not too high volume.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">remote.co</span>
+    </a>
+<a href="https://remotehub.com/jobs?q=data+engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#15</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">RemoteHub</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Remote teams + jobs. Community aspect helpful for networking.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">remotehub.com</span>
+    </a>
+<a href="https://remoteok.com/remote-data-engineer-jobs" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#16</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Remote OK</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">High volume. Tech-focused. Check daily for fresh AI/data postings.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">remoteok.com</span>
+    </a>
+<a href="https://remotive.com/remote-jobs/software-dev?search=data+engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#17</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Remotive</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Curated remote tech jobs. Good for AI startups, updated daily.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">remotive.com</span>
+    </a>
+<a href="https://www.skipthedrive.com/jobs/?q=data+engineer&r=1" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#18</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">SkipTheDrive</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Remote work directory. Less known = less competition.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">skipthedrive.com</span>
+    </a>
+<a href="https://www.turing.com/jobs/data-engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#19</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Turing</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">AI-powered matching for remote engineers. Vetting required but higher pay.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">turing.com</span>
+    </a>
+<a href="https://www.toptal.com/data-engineers" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#20</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Toptal</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Top 3% talent network. Rigorous screening but premium rates.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">toptal.com</span>
+    </a>
+<a href="https://www.virtualvocations.com/jobs/q-data-engineer/" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#21</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Virtual Vocations</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Telecommute specialists. Unique companies not on other boards.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">virtualvocations.com</span>
+    </a>
+<a href="https://weworkremotely.com/remote-jobs/search?term=data+engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#22</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">We Work Remotely</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Largest remote-only board. High quality data/ML postings.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">weworkremotely.com</span>
+    </a>
+<a href="https://www.workingnomads.com/remote-data-engineer-jobs" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#23</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Working Nomads</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Curated remote. Good overlap with AI/ML companies.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">workingnomads.com</span>
+    </a>
+<a href="https://www.wfh.io/search?q=data+engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#24</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">WFH.io</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Work From Home focused. Simpler UI, good volume.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">wfh.io</span>
+    </a>
+<a href="https://landing.jobs/jobs?remote=true&q=data+engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #06b6d4;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#06b6d4;font-family:'Space Mono';opacity:.6">#25</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Landing.jobs</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Tech-forward. European roots, strong US remote listings now.</p>
+      <span style="font-size:9.5px;color:#06b6d4;font-family:'Space Mono'">landing.jobs</span>
+    </a>
+      </div>
+    </div>
+
+    <div style="margin-bottom:18px">
+      <p style="font-size:10px;color:#a78bfa;font-family:'Space Mono';margin-bottom:10px;letter-spacing:.5px">🛂 H1B-SPECIFIC JOB BOARDS</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
+        <a href="https://www.h1b-connect.com/jobs?category=data-engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #a78bfa;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#a78bfa;font-family:'Space Mono';opacity:.6">#01</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">H1BConnect</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">6000+ jobs with H1B sponsor data. Shows approval rates per company.</p>
+      <span style="font-size:9.5px;color:#a78bfa;font-family:'Space Mono'">www.h1b-connect.com</span>
+    </a>
+<a href="https://www.dice.com/jobs?q=data+engineer+AI&location=Dallas+TX&radius=25&employment=FULLTIME&visa=H1B_Visa" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #a78bfa;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#a78bfa;font-family:'Space Mono';opacity:.6">#02</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Dice.com</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Best tech job board. H1B filter built in. High data eng volume.</p>
+      <span style="font-size:9.5px;color:#a78bfa;font-family:'Space Mono'">dice.com</span>
+    </a>
+<a href="https://www.myvisajobs.com/Search_Visa_Sponsor.aspx?T=JT&K=data+engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #a78bfa;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#a78bfa;font-family:'Space Mono';opacity:.6">#03</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">MyVisaJobs</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Indexes DOL LCA data. Search by company visa history.</p>
+      <span style="font-size:9.5px;color:#a78bfa;font-family:'Space Mono'">myvisajobs.com</span>
+    </a>
+<a href="https://h1bgrader.com/search?q=data+engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #a78bfa;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#a78bfa;font-family:'Space Mono';opacity:.6">#04</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">H1B Grader</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Company-level H1B approval/denial rates. Research before applying.</p>
+      <span style="font-size:9.5px;color:#a78bfa;font-family:'Space Mono'">h1bgrader.com</span>
+    </a>
+<a href="https://h1bdatahub.com/search?query=data+engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #a78bfa;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#a78bfa;font-family:'Space Mono';opacity:.6">#05</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">H1B Data Hub</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Real DOL LCA salary data. Verify company pay before negotiating.</p>
+      <span style="font-size:9.5px;color:#a78bfa;font-family:'Space Mono'">h1bdatahub.com</span>
+    </a>
+<a href="https://immihelp.com/jobs/search/?q=data+engineer&l=Dallas" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #a78bfa;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#a78bfa;font-family:'Space Mono';opacity:.6">#06</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">ImmiHelp Jobs</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">H1B focused job board. Less competition than mainstream boards.</p>
+      <span style="font-size:9.5px;color:#a78bfa;font-family:'Space Mono'">immihelp.com/jobs</span>
+    </a>
+<a href="https://jobright.ai/jobs/data-engineer?visa=h1b" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #a78bfa;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#a78bfa;font-family:'Space Mono';opacity:.6">#07</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Jobright.ai</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">AI-matched H1B jobs. Daily H1B sponsor GitHub repo partner.</p>
+      <span style="font-size:9.5px;color:#a78bfa;font-family:'Space Mono'">jobright.ai</span>
+    </a>
+      </div>
+    </div>
+
+    <div>
+      <p style="font-size:10px;color:#f59e0b;font-family:'Space Mono';margin-bottom:10px;letter-spacing:.5px">💼 MAINSTREAM JOB BOARDS</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
+        <a href="https://www.linkedin.com/jobs/search/?keywords=data+engineer+AI&location=Dallas%2C+TX&f_JT=F&f_TPR=r2592000" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #f59e0b;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#f59e0b;font-family:'Space Mono';opacity:.6">#01</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">LinkedIn Jobs</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">#1 for data engineering. Use F_JT=F (Full-Time) + visa filter.</p>
+      <span style="font-size:9.5px;color:#f59e0b;font-family:'Space Mono'">linkedin.com/jobs</span>
+    </a>
+<a href="https://www.indeed.com/jobs?q=data+engineer+AI+H1B+sponsorship&l=Dallas%2C+TX&jt=fulltime&fromage=14" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #f59e0b;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#f59e0b;font-family:'Space Mono';opacity:.6">#02</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Indeed</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Highest volume. Set alerts for 'data engineer H1B Dallas'.</p>
+      <span style="font-size:9.5px;color:#f59e0b;font-family:'Space Mono'">indeed.com</span>
+    </a>
+<a href="https://www.glassdoor.com/Job/jobs.htm?sc.keyword=data+engineer+AI&locT=C&locId=1139977&jobType=fulltime" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #f59e0b;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#f59e0b;font-family:'Space Mono';opacity:.6">#03</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Glassdoor</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Salary data + company reviews. Apply via Glassdoor to see pay.</p>
+      <span style="font-size:9.5px;color:#f59e0b;font-family:'Space Mono'">glassdoor.com</span>
+    </a>
+<a href="https://www.ziprecruiter.com/jobs-search?search=data+engineer+AI+H1B&location=Dallas%2C+TX&employment_type=full_time" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #f59e0b;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#f59e0b;font-family:'Space Mono';opacity:.6">#04</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">ZipRecruiter</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Good volume Dallas area. Set up email alerts immediately.</p>
+      <span style="font-size:9.5px;color:#f59e0b;font-family:'Space Mono'">ziprecruiter.com</span>
+    </a>
+<a href="https://www.simplyhired.com/search?q=data+engineer+AI+H1B&l=Dallas%2C+TX&job-types=fulltime" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #f59e0b;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#f59e0b;font-family:'Space Mono';opacity:.6">#05</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Simplyhired</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Aggregator. Catches jobs missed by LinkedIn/Indeed.</p>
+      <span style="font-size:9.5px;color:#f59e0b;font-family:'Space Mono'">simplyhired.com</span>
+    </a>
+<a href="https://otta.com/search/jobs?searchTerm=data+engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #f59e0b;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#f59e0b;font-family:'Space Mono';opacity:.6">#06</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Otta</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Curated tech startups. Quality over quantity, less noise.</p>
+      <span style="font-size:9.5px;color:#f59e0b;font-family:'Space Mono'">otta.com</span>
+    </a>
+<a href="https://www.levels.fyi/jobs?title=Data+Engineer&location=Dallas" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #f59e0b;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#f59e0b;font-family:'Space Mono';opacity:.6">#07</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Levels.fyi Jobs</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">FAANG-adjacent companies. Best for salary transparency.</p>
+      <span style="font-size:9.5px;color:#f59e0b;font-family:'Space Mono'">levels.fyi/jobs</span>
+    </a>
+<a href="https://www.ycombinator.com/jobs/role/data-engineer/remote" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #f59e0b;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#f59e0b;font-family:'Space Mono';opacity:.6">#08</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Y Combinator Jobs</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">All YC-backed startups. Many H1B friendly, high-growth.</p>
+      <span style="font-size:9.5px;color:#f59e0b;font-family:'Space Mono'">ycombinator.com/jobs</span>
+    </a>
+<a href="https://boards.greenhouse.io/search#t=jobs&q=data+engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #f59e0b;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#f59e0b;font-family:'Space Mono';opacity:.6">#09</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Greenhouse</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">ATS used by top startups. Search directly on company pages.</p>
+      <span style="font-size:9.5px;color:#f59e0b;font-family:'Space Mono'">boards.greenhouse.io</span>
+    </a>
+<a href="https://jobs.lever.co/search?q=data+engineer" target="_blank" style="background:#070e1c;border:1px solid rgba(255,255,255,.06);border-left:3px solid #f59e0b;border-radius:11px;padding:12px 15px;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;color:#f59e0b;font-family:'Space Mono';opacity:.6">#10</span>
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9">Lever</span>
+      </div>
+      <p style="font-size:11px;color:#475569;margin:0 0 6px">Another top ATS. Apply here for Confluent, dbt Labs, Fivetran.</p>
+      <span style="font-size:9.5px;color:#f59e0b;font-family:'Space Mono'">jobs.lever.co</span>
+    </a>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <div id="footer">
@@ -367,10 +757,11 @@ function switchTab(id) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   const btns = document.querySelectorAll('.nav-btn');
-  const map = {search:0,saved:1,tracker:2,salary:3};
+  const map = {search:0,saved:1,tracker:2,salary:3,companies:4,boards:5};
   btns[map[id]].classList.add('active');
   if (id==='saved') renderSaved();
   if (id==='tracker') renderTracker();
+  if (id==='companies') renderCompanies();
 }
 
 // ── PROGRESS BAR ──────────────────────────────────────────────────────────────
@@ -498,8 +889,8 @@ async function runSearch() {
     const rawKey = localStorage.getItem('jr_api_key')||'';
     const apiKey = rawKey.replace(/[^\x20-\x7E]/g,'').trim();
     if (!apiKey) { throw new Error('Please enter your Anthropic API key in the yellow bar above.'); }
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST', headers: {'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-calls':'true'},
+    const res = await fetch('/api', {
+      method: 'POST', headers: {'Content-Type':'application/json',},
       body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:8000,system:JOB_PROMPT,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:'Find H1B FULL-TIME AI Data Engineer jobs near Dallas TX 75234. Run all 8 searches. No W2/contract. Sort recent first. EXACT direct URLs. Return only JSON array.'}]})
     });
     if (!res.ok) throw new Error('API error '+res.status);
@@ -690,7 +1081,7 @@ async function runSalary() {
     const rawKey = localStorage.getItem('jr_api_key')||'';
     const apiKey = rawKey.replace(/[^\x20-\x7E]/g,'').trim();
     if (!apiKey) { throw new Error('Please enter your Anthropic API key in the yellow bar above.'); }
-    const res = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-calls':'true'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:3000,system:SAL_PROMPT,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:`Find 2025 salary for "${role}" in Dallas TX. Search levels.fyi, Glassdoor, LinkedIn, Indeed. Return only the JSON object.`}]})});
+    const res = await fetch('/api',{method:'POST',headers:{'Content-Type':'application/json',},body:JSON.stringify({apiKey:apiKey,model:'claude-haiku-4-5-20251001',max_tokens:3000,system:SAL_PROMPT,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:`Find 2025 salary for "${role}" in Dallas TX. Search levels.fyi, Glassdoor, LinkedIn, Indeed. Return only the JSON object.`}]})});
     if (!res.ok) throw new Error('API error '+res.status);
     const d = await res.json();
     const raw = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
@@ -748,6 +1139,117 @@ function renderSalary(data) {
     ${data.h1bNotes?`<div style="background:rgba(6,182,212,.05);border:1px solid rgba(6,182,212,.18);border-radius:10px;padding:12px 16px;font-size:12px;color:#7dd3fc;margin-bottom:10px">🛂 <strong>H1B Note:</strong> ${data.h1bNotes}</div>`:''}
     ${data.sources?.length?`<p style="font-size:10px;color:#1e3a5f;font-family:'Space Mono'">Sources: ${data.sources.join(' · ')}</p>`:''}
   `;
+}
+
+
+// ── COMPANIES DATA ────────────────────────────────────────────────────────────
+const COMPANIES = [
+  // ── TIER 1: BIG TECH — Highest Pay, Competitive ─────────────────────────────
+  {name:"Amazon / AWS",cat:"bigtech",tags:["Python","Spark","AWS"],why:"#1 H1B sponsor (15,524 LCAs). AWS data engineering roles match your pipeline expertise perfectly. Most openings of any company.",salary:"$159K avg · $140-200K",remote:true,size:"Enterprise",h1b:"#1 Sponsor (15,524 LCAs)",linkedin:"Amazon AWS data engineer"},
+  {name:"Microsoft",cat:"bigtech",tags:["Azure","Python","Databricks"],why:"4,725 H1B approvals 2024. Your Azure expertise is a perfect fit. Microsoft Fabric + Databricks roles especially relevant.",salary:"$164K avg",remote:true,size:"Enterprise",h1b:"Top Sponsor (5,189 LCAs)",linkedin:"Microsoft data engineer"},
+  {name:"Google",cat:"bigtech",tags:["GCP","Python","BigQuery"],why:"4,890 LCAs, avg $182K. Your GCP experience (BigQuery, Dataflow from Valeo/Caterpillar) opens doors here.",salary:"$182K avg",remote:true,size:"Enterprise",h1b:"Top Sponsor (4,890 LCAs)",linkedin:"Google data engineer"},
+  {name:"Meta",cat:"bigtech",tags:["Python","Spark","Presto"],why:"Highest avg salary ($205K). 5,123 LCAs. Highly competitive but your 13-yr exp is relevant.",salary:"$205K avg (highest)",remote:true,size:"Enterprise",h1b:"Top Sponsor (5,123 LCAs)",linkedin:"Meta data engineer"},
+  {name:"Apple",cat:"bigtech",tags:["Python","Spark","Swift"],why:"4,202 H1B approvals, $170K avg. Data engineering roles across Apple services (iCloud, App Store analytics).",salary:"$170K avg",remote:false,size:"Enterprise",h1b:"Top Sponsor (4,202 LCAs)",linkedin:"Apple data engineer"},
+  {name:"Netflix",cat:"bigtech",tags:["Python","Spark","Flink"],why:"Highest data team salaries ($198K avg). 892 LCAs. Real-time streaming + Spark pipelines match your skills.",salary:"$198K avg",remote:true,size:"Enterprise",h1b:"Strong Sponsor (892 LCAs)",linkedin:"Netflix data engineer"},
+  {name:"Nvidia",cat:"bigtech",tags:["Python","CUDA","ML"],why:"2,341 LCAs, $169K avg. AI infrastructure boom — data platform and ML pipeline roles growing fast.",salary:"$169K avg",remote:false,size:"Enterprise",h1b:"Top Sponsor (2,341 LCAs)",linkedin:"Nvidia data engineer"},
+  {name:"Salesforce",cat:"bigtech",tags:["Python","Spark","SQL"],why:"1,876 LCAs, $168K avg. Einstein AI data platform needs pipeline engineers. Dallas presence.",salary:"$168K avg",remote:true,size:"Enterprise",h1b:"Strong Sponsor (1,876 LCAs)",linkedin:"Salesforce data engineer"},
+  {name:"Uber",cat:"bigtech",tags:["Python","Spark","Kafka"],why:"1,567 LCAs, $172K avg. World-class data infra team — Michelangelo ML platform, real-time pipelines.",salary:"$172K avg",remote:true,size:"Enterprise",h1b:"Strong Sponsor (1,567 LCAs)",linkedin:"Uber data engineer"},
+  {name:"Oracle",cat:"bigtech",tags:["SQL","Python","Java"],why:"2,456 LCAs, $152K avg. OCI data lake + autonomous database. Your SQL depth is valuable here.",salary:"$152K avg",remote:true,size:"Enterprise",h1b:"Top Sponsor (2,456 LCAs)",linkedin:"Oracle data engineer"},
+  // ── TIER 2: FINTECH — High Pay, Strong H1B ──────────────────────────────────
+  {name:"Goldman Sachs",cat:"fintech",tags:["Python","Spark","SQL"],why:"1,765 LCAs, $175K avg. Marquee platform data engineering roles. Your Capital One fintech experience is directly relevant.",salary:"$175K avg",remote:false,size:"Enterprise",h1b:"Strong Sponsor (1,765 LCAs)",linkedin:"Goldman Sachs data engineer"},
+  {name:"Stripe",cat:"fintech",tags:["Python","Scala","Kafka"],why:"987 LCAs, $178K avg — 100% approval rate in 2025. Remote-first. Real-time payment data pipelines.",salary:"$178K avg · 100% approval",remote:true,size:"Enterprise",h1b:"Top Approval Rate (987 LCAs)",linkedin:"Stripe data engineer"},
+  {name:"Capital One",cat:"fintech",tags:["Databricks","Snowflake","dbt"],why:"Already on your resume! 1,654 LCAs, $152K avg. Internal transfer possible — you have contacts here.",salary:"$152K avg",remote:false,size:"Enterprise",h1b:"Strong Sponsor (1,654 LCAs)",linkedin:"Capital One data engineer"},
+  {name:"JPMorgan Chase",cat:"fintech",tags:["Azure","Spark","Python"],why:"2,440 LCAs, $148K avg. Massive Plano TX tech hub — Dallas area! AI data engineering push across all LOBs.",salary:"$148K avg",remote:false,size:"Enterprise",h1b:"Top Sponsor (2,440 LCAs)",linkedin:"JPMorgan Chase data engineer Plano"},
+  {name:"PayPal",cat:"fintech",tags:["Python","Spark","Kafka"],why:"1,234 LCAs, $158K avg. Real-time transaction data pipelines. Strong H1B history.",salary:"$158K avg",remote:true,size:"Enterprise",h1b:"Strong Sponsor (1,234 LCAs)",linkedin:"PayPal data engineer"},
+  {name:"Coinbase",cat:"fintech",tags:["Python","Spark","dbt"],why:"Growing fast: +110% H1B filings (312→654). Blockchain + data engineering. Remote-first.",salary:"$182K avg",remote:true,size:"Mid-size",h1b:"Fast Growing (654 LCAs)",linkedin:"Coinbase data engineer"},
+  {name:"Plaid",cat:"fintech",tags:["Python","Go","Kafka"],why:"Financial data network. Real-time pipelines at scale. Strong H1B track record.",salary:"$160-240K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Plaid data engineer"},
+  {name:"Brex",cat:"fintech",tags:["Python","Spark","dbt"],why:"Fast-growing fintech, modern data stack (dbt, Spark). Remote-first.",salary:"$150-220K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Brex data engineer"},
+  // ── TIER 3: AI/DATA PLATFORMS — Your Strongest Fit ──────────────────────────
+  {name:"Databricks",cat:"aidata",tags:["PySpark","Delta Lake","MLflow"],why:"+152% H1B growth (189→476). $185K avg. You ARE a Databricks expert — Delta Lake, Workflows, performance tuning. Apply here.",salary:"$185K avg · fastest growing",remote:true,size:"Enterprise",h1b:"Fast Growing (476 LCAs)",linkedin:"Databricks data engineer"},
+  {name:"Snowflake",cat:"aidata",tags:["Snowflake","Python","SQL"],why:"+80% H1B growth. $178K avg. You have Snowflake + Snowpark experience from Capital One and bioMerieux.",salary:"$178K avg",remote:true,size:"Enterprise",h1b:"Growing Fast (421 LCAs)",linkedin:"Snowflake data engineer"},
+  {name:"dbt Labs",cat:"aidata",tags:["dbt","Python","SQL"],why:"You used dbt in production at Capital One. Remote-first. Direct experience = huge differentiator.",salary:"$140-200K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"dbt Labs data engineer"},
+  {name:"Confluent",cat:"aidata",tags:["Kafka","Flink","Python"],why:"Kafka company — already on your resume. Production Kafka at Humana + Capital One is a direct match.",salary:"$150-220K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Confluent data engineer"},
+  {name:"Fivetran",cat:"aidata",tags:["Python","Java","ELT"],why:"Data integration/ELT leader. Core data engineering company with strong H1B program.",salary:"$140-200K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Fivetran data engineer"},
+  {name:"Pinecone",cat:"aidata",tags:["Python","Vector DB","RAG"],why:"Vector DB / RAG infrastructure. Hottest AI infra space right now. Your Delta Lake pipeline → embeddings is relevant.",salary:"$160-230K",remote:true,size:"Startup",h1b:"Strong Sponsor",linkedin:"Pinecone data engineer"},
+  {name:"Astronomer",cat:"aidata",tags:["Airflow","Python","dbt"],why:"Managed Airflow platform. You have Airflow + dbt from Capital One — direct product experience.",salary:"$130-185K",remote:true,size:"Startup",h1b:"Sponsor",linkedin:"Astronomer data engineer"},
+  {name:"Starburst",cat:"aidata",tags:["Trino","SQL","Python"],why:"Distributed SQL / data lakehouse query engine. Complements your Delta Lake skills.",salary:"$135-195K",remote:true,size:"Mid-size",h1b:"Sponsor",linkedin:"Starburst data engineer"},
+  {name:"Airbyte",cat:"aidata",tags:["Python","Java","ELT"],why:"Open-source ELT platform. Fast growing, modern data stack. Good H1B track record.",salary:"$130-190K",remote:true,size:"Startup",h1b:"Sponsor",linkedin:"Airbyte data engineer"},
+  {name:"Monte Carlo",cat:"aidata",tags:["Python","SQL","dbt"],why:"Data observability. Your data quality reconciliation work at Humana is directly relevant.",salary:"$130-185K",remote:true,size:"Startup",h1b:"Sponsor",linkedin:"Monte Carlo data observability engineer"},
+  {name:"Tabular",cat:"aidata",tags:["Iceberg","Spark","Python"],why:"Apache Iceberg managed service — data lakehouse competitor to Delta Lake. Hot space right now.",salary:"$140-200K",remote:true,size:"Startup",h1b:"Sponsor",linkedin:"Tabular data engineer"},
+  // ── TIER 4: MLOps/AI INFRA ──────────────────────────────────────────────────
+  {name:"Weights & Biases",cat:"mlops",tags:["Python","MLOps","ML"],why:"MLOps tooling company. Remote-first. Your Databricks+MLflow background is exactly what they build.",salary:"$150-220K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Weights Biases data engineer"},
+  {name:"Tecton",cat:"mlops",tags:["Python","Scala","Spark"],why:"ML Feature Store — next layer above your Delta Lake expertise. Databricks alumni founded it.",salary:"$150-215K",remote:true,size:"Startup",h1b:"Strong Sponsor",linkedin:"Tecton data engineer"},
+  {name:"Scale AI",cat:"mlops",tags:["Python","ML","Data Quality"],why:"AI data infrastructure. Data quality and pipeline work is their core mission. High growth.",salary:"$160-240K",remote:false,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Scale AI data engineer"},
+  {name:"Anyscale",cat:"mlops",tags:["Python","Ray","Distributed"],why:"Distributed AI compute (Ray framework). Natural evolution from your PySpark/distributed systems work.",salary:"$160-230K",remote:true,size:"Startup",h1b:"Strong Sponsor",linkedin:"Anyscale data engineer"},
+  {name:"Domino Data Lab",cat:"mlops",tags:["Python","Scala","MLOps"],why:"Enterprise MLOps platform. Your Humana healthcare data angle is a differentiator for their enterprise customers.",salary:"$140-200K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Domino Data Lab data engineer"},
+  {name:"Prefect",cat:"mlops",tags:["Python","Orchestration","dbt"],why:"Workflow orchestration — modern Airflow alternative. Remote-first, strong eng culture.",salary:"$130-190K",remote:true,size:"Startup",h1b:"Sponsor",linkedin:"Prefect data engineer"},
+  {name:"Arize AI",cat:"mlops",tags:["Python","ML","Monitoring"],why:"ML observability/monitoring. Emerging space, less competition, strong growth.",salary:"$140-200K",remote:true,size:"Startup",h1b:"Sponsor",linkedin:"Arize AI data engineer"},
+  {name:"Cohere",cat:"mlops",tags:["Python","LLM","ML"],why:"Enterprise LLM company. Data pipeline engineers needed for training data preparation at scale.",salary:"$160-230K",remote:true,size:"Startup",h1b:"Strong Sponsor",linkedin:"Cohere data engineer"},
+  {name:"DataRobot",cat:"mlops",tags:["Python","AutoML","ML"],why:"AutoML platform. Data engineering for ML pipelines. Stable company, good H1B program.",salary:"$130-185K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"DataRobot data engineer"},
+  // ── TIER 5: HEALTHCARE AI ────────────────────────────────────────────────────
+  {name:"Komodo Health",cat:"healthcare",tags:["Python","Spark","ML"],why:"Healthcare intelligence from claims data — exactly what you build at Humana. Most direct match on this list.",salary:"$135-195K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Komodo Health data engineer"},
+  {name:"Tempus AI",cat:"healthcare",tags:["Python","ML","Scala"],why:"Healthcare AI / precision medicine. Clinical + claims data pipelines. Your EDI 837 background is rare here.",salary:"$130-190K",remote:false,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Tempus AI data engineer"},
+  {name:"Innovaccer",cat:"healthcare",tags:["Python","Spark","Azure"],why:"Health data platform on Azure + Spark — your exact stack. Indian-founded, very H1B friendly.",salary:"$125-175K",remote:true,size:"Mid-size",h1b:"Very Strong",linkedin:"Innovaccer data engineer"},
+  {name:"Datavant",cat:"healthcare",tags:["Python","Spark","dbt"],why:"Healthcare data linkage. Heavy data engineering. Post-IPO growth phase with many openings.",salary:"$140-200K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Datavant data engineer"},
+  {name:"McKesson",cat:"healthcare",tags:["Azure","Python","SQL"],why:"Healthcare distribution — Dallas HQ! Your Humana healthcare data expertise transfers directly.",salary:"$130-175K",remote:false,size:"Enterprise",h1b:"Very Strong",linkedin:"McKesson data engineer Dallas"},
+  {name:"Veeva Systems",cat:"healthcare",tags:["Java","Python","SQL"],why:"Life sciences cloud. Very stable, strong H1B. $130-185K range. Dallas area presence.",salary:"$130-185K",remote:false,size:"Enterprise",h1b:"Very Strong",linkedin:"Veeva Systems data engineer"},
+  // ── TIER 6: DALLAS-AREA ENTERPRISE ──────────────────────────────────────────
+  {name:"AT&T",cat:"dallas",tags:["Azure","Databricks","PySpark"],why:"Dallas HQ! Massive data engineering team. Heavy Azure + Databricks — your exact stack. Very strong H1B program.",salary:"$130-180K",remote:false,size:"Enterprise",h1b:"Very Strong",linkedin:"AT&T data engineer Dallas"},
+  {name:"Toyota Connected",cat:"dallas",tags:["Azure","Python","Spark"],why:"Plano TX (Dallas area)! Growing AI/data team. Azure-first — perfect match.",salary:"$125-170K",remote:false,size:"Enterprise",h1b:"Strong Sponsor",linkedin:"Toyota Connected data engineer"},
+  {name:"Celanese",cat:"dallas",tags:["Azure","Databricks","Python"],why:"Dallas HQ. Manufacturing AI on Azure + Databricks. Less competition than tech companies.",salary:"$120-165K",remote:false,size:"Enterprise",h1b:"Strong Sponsor",linkedin:"Celanese data engineer Dallas"},
+  {name:"Cognizant",cat:"dallas",tags:["Azure","PySpark","Databricks"],why:"Guaranteed H1B — 8,688 LCAs (#2 sponsor). Many Dallas-area clients. Fast placement for your skill set.",salary:"$101K avg (consulting)",remote:false,size:"Enterprise",h1b:"#2 Sponsor (8,688 LCAs)",linkedin:"Cognizant data engineer Dallas"},
+  {name:"TCS (Tata)",cat:"dallas",tags:["Azure","PySpark","SQL"],why:"#3 H1B sponsor (8,120 LCAs). Immediate transfer, stable. Dallas presence. Good entry point.",salary:"$105K avg (consulting)",remote:false,size:"Enterprise",h1b:"#3 Sponsor (8,120 LCAs)",linkedin:"TCS data engineer Dallas"},
+  {name:"Infosys",cat:"dallas",tags:["Azure","Spark","Python"],why:"4,926 LCAs. Dallas hub. Client-facing data engineering — good for H1B stability.",salary:"$103K avg (consulting)",remote:false,size:"Enterprise",h1b:"Top Sponsor (4,926 LCAs)",linkedin:"Infosys data engineer Dallas"},
+  {name:"Deloitte",cat:"dallas",tags:["Azure","Databricks","Python"],why:"2,876 LCAs, $125K avg. Dallas office. AI/data practice growing rapidly — healthcare + finance clients.",salary:"$125K avg",remote:false,size:"Enterprise",h1b:"Very Strong (2,876 LCAs)",linkedin:"Deloitte data engineer Dallas"},
+  {name:"Accenture",cat:"dallas",tags:["Azure","Spark","ML"],why:"3,234 LCAs, $112K avg. Dallas hub. AI/data engineering projects across healthcare, finance clients.",salary:"$112K avg",remote:false,size:"Enterprise",h1b:"Very Strong (3,234 LCAs)",linkedin:"Accenture data engineer Dallas"},
+  // ── TIER 7: ADDITIONAL AI STARTUPS (2025-2026 Funded) ───────────────────────
+  {name:"Anthropic",cat:"aidata",tags:["Python","ML","LLM"],why:"Claude AI company. Data infrastructure and safety engineering roles. Very competitive but worth applying.",salary:"$180-280K",remote:true,size:"Startup",h1b:"Strong Sponsor",linkedin:"Anthropic data engineer"},
+  {name:"OpenAI",cat:"aidata",tags:["Python","ML","LLM"],why:"ChatGPT company. Data platform engineering roles. Your Delta Lake + pipeline work for AI training data.",salary:"$200-320K",remote:false,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"OpenAI data engineer"},
+  {name:"Mistral AI",cat:"mlops",tags:["Python","ML","LLM"],why:"European LLM company with growing US presence. Data infra engineering roles emerging.",salary:"$160-240K",remote:true,size:"Startup",h1b:"Sponsor",linkedin:"Mistral AI data engineer"},
+  {name:"Together AI",cat:"mlops",tags:["Python","Distributed","ML"],why:"LLM infrastructure. Data pipelines for training at scale — Spark expertise very relevant.",salary:"$160-240K",remote:true,size:"Startup",h1b:"Sponsor",linkedin:"Together AI data engineer"},
+  {name:"Dataiku",cat:"mlops",tags:["Python","Spark","ML"],why:"Data science platform — enterprise AI. Healthcare and financial clients. Good H1B track record.",salary:"$140-200K",remote:false,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Dataiku data engineer"},
+  {name:"Atlan",cat:"aidata",tags:["Python","SQL","Metadata"],why:"Data catalog / metadata management. Indian-founded, very H1B friendly culture.",salary:"$125-175K",remote:true,size:"Startup",h1b:"Very Strong",linkedin:"Atlan data engineer"},
+  {name:"ServiceNow",cat:"bigtech",tags:["Python","SQL","Azure"],why:"567 LCAs, $168K avg. Dallas area presence. Workflow + data platform engineering.",salary:"$168K avg",remote:false,size:"Enterprise",h1b:"Growing (567 LCAs)",linkedin:"ServiceNow data engineer"},
+  {name:"Workday",cat:"bigtech",tags:["Java","Python","SQL"],why:"498 LCAs, $158K avg. HR tech data engineering. Stable, strong H1B.",salary:"$158K avg",remote:true,size:"Enterprise",h1b:"Steady (498 LCAs)",linkedin:"Workday data engineer"},
+  {name:"Intuit",cat:"fintech",tags:["Python","Spark","dbt"],why:"654 LCAs, $162K avg. TurboTax/QuickBooks data engineering. Strong AI push in 2025-2026.",salary:"$162K avg",remote:true,size:"Enterprise",h1b:"Strong (654 LCAs)",linkedin:"Intuit data engineer"},
+  {name:"Adobe",cat:"bigtech",tags:["Python","Spark","SQL"],why:"1,234 LCAs, $158K avg. Experience Cloud data engineering. Remote-friendly.",salary:"$158K avg",remote:true,size:"Enterprise",h1b:"Strong (1,234 LCAs)",linkedin:"Adobe data engineer"},
+  {name:"Bloomberg LP",cat:"fintech",tags:["Python","Kafka","SQL"],why:"876 LCAs, $165K avg. Financial data infrastructure — Kafka expertise is a direct match.",salary:"$165K avg",remote:false,size:"Enterprise",h1b:"Strong (876 LCAs)",linkedin:"Bloomberg data engineer"},
+  {name:"CrowdStrike",cat:"bigtech",tags:["Python","Spark","Kafka"],why:"+90% H1B growth (198→376). $162K avg. Cybersecurity data platform — real-time threat data pipelines.",salary:"$162K avg · fast growing",remote:true,size:"Enterprise",h1b:"Fast Growing (376 LCAs)",linkedin:"CrowdStrike data engineer"},
+  {name:"Palantir",cat:"bigtech",tags:["Python","Spark","SQL"],why:"543 LCAs, $172K avg. Data platform engineering for enterprise AI. Government + commercial.",salary:"$172K avg",remote:false,size:"Enterprise",h1b:"Steady (543 LCAs)",linkedin:"Palantir data engineer"},
+  {name:"DoorDash",cat:"bigtech",tags:["Python","Spark","Kafka"],why:"765 LCAs, $168K avg. Real-time logistics data pipelines — Kafka + Spark at scale.",salary:"$168K avg",remote:true,size:"Enterprise",h1b:"Strong (765 LCAs)",linkedin:"DoorDash data engineer"},
+];
+
+let coFilter = 'all';
+function filterCo(val, btn) {
+  coFilter = val;
+  document.querySelectorAll('#tab-companies .chip').forEach(c=>c.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderCompanies();
+}
+
+function renderCompanies() {
+  const list = coFilter==='all' ? COMPANIES : coFilter==='remote' ? COMPANIES.filter(c=>c.remote) : COMPANIES.filter(c=>c.cat===coFilter);
+  document.getElementById('co-count').textContent = list.length + ' companies';
+  document.getElementById('co-grid').innerHTML = list.map((co,i) => {
+    const h1bColor = co.h1b.includes('Very')||co.h1b.includes('Top') ? '#34d399' : '#fbbf24';
+    return `<div class="job-card fade" style="border-left-color:#06b6d4;animation-delay:${i*.03}s;padding:14px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div>
+          <div style="font-size:13.5px;font-weight:700;color:#f1f5f9;margin-bottom:3px">${co.name}</div>
+          <div style="font-size:10px;color:#475569">${co.size} · ${co.remote?'🌐 Remote-friendly':'📍 On-site'}</div>
+        </div>
+        <span style="font-size:9px;padding:2px 8px;border-radius:20px;background:${h1bColor}12;border:1px solid ${h1bColor}30;color:${h1bColor};font-weight:700;white-space:nowrap">${co.h1b}</span>
+      </div>
+      <div style="font-size:11px;color:#34d399;font-weight:600;margin-bottom:8px">💰 ${co.salary}</div>
+      <p style="font-size:11px;color:#64748b;line-height:1.5;margin-bottom:8px">${co.why}</p>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">
+        ${co.tags.map(t=>`<span style="font-size:9.5px;padding:2px 7px;border-radius:5px;background:${gc(t,TAG_COLORS)}10;border:1px solid ${gc(t,TAG_COLORS)}25;color:${gc(t,TAG_COLORS)}">${t}</span>`).join('')}
+      </div>
+      <a href="https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(co.linkedin)}&f_JT=F&f_TPR=r2592000" target="_blank" class="apply-btn" style="font-size:11px;padding:6px 14px;width:100%;justify-content:center;box-sizing:border-box">
+        🔍 Find ${co.name} Jobs on LinkedIn
+      </a>
+    </div>`;
+  }).join('');
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────────────
