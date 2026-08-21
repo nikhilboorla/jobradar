@@ -166,10 +166,8 @@ select.sort-sel option{background:#0a1628}
     <input id="api-key-input" type="password" placeholder="sk-ant-api03-..."
       style="flex:2;min-width:200px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:7px;padding:5px 10px;font-size:12px;color:#fbbf24;font-family:'Space Mono';outline:none"
       oninput="saveKey(this.value)"/>
-    <span style="font-size:9px;color:#06b6d4;font-family:'Space Mono';white-space:nowrap">🌐 PROXY URL</span>
-    <input id="proxy-url-input" type="text" placeholder="https://your-worker.workers.dev"
-      style="flex:2;min-width:200px;background:rgba(6,182,212,.06);border:1px solid rgba(6,182,212,.2);border-radius:7px;padding:5px 10px;font-size:12px;color:#06b6d4;font-family:'Space Mono';outline:none"
-      oninput="saveProxy(this.value)"/>
+    <span style="font-size:9px;color:#34d399;font-family:'Space Mono';white-space:nowrap;padding:4px 10px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);border-radius:7px">⚡ Proxy: Connected</span>
+    <input id="proxy-url-input" type="hidden" value="https://shrill-hat-ec23.bnikhil545.workers.dev"/>
     <span id="key-status" style="font-size:10px;color:#475569;white-space:nowrap">⚠️ Setup needed</span>
     <a href="https://console.anthropic.com/account/keys" target="_blank"
       style="font-size:9px;color:#a78bfa;text-decoration:none;white-space:nowrap">Get API key →</a>
@@ -182,8 +180,16 @@ select.sort-sel option{background:#0a1628}
   <!-- ── SEARCH TAB ── -->
   <div id="tab-search" class="tab-panel active">
     <div class="search-box">
+      <!-- Mode Toggle -->
+      <div style="display:flex;gap:6px;margin-bottom:12px">
+        <button id="mode-de" onclick="setMode('de')" style="flex:1;padding:9px;border-radius:9px;border:2px solid #06b6d4;background:rgba(6,182,212,.15);color:#06b6d4;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit">🗄️ Data Engineer</button>
+        <button id="mode-ai" onclick="setMode('ai')" style="flex:1;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.08);background:transparent;color:#475569;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit">🤖 AI Data Engineer</button>
+      </div>
+      <div id="mode-desc" style="font-size:10px;color:#475569;font-family:'Space Mono';margin-bottom:12px;padding:5px 10px;background:rgba(6,182,212,.04);border-radius:6px;border-left:2px solid #06b6d4">
+        Databricks · PySpark · Delta Lake · Delta Live Tables · Unity Catalog · ADF · Kafka · dbt · Snowflake
+      </div>
       <div class="search-grid">
-        <div><div class="field-label">ROLE</div><div class="field-val">💼 Data Engineer / AI Engineer</div></div>
+        <div><div class="field-label">ROLE</div><div class="field-val" id="role-display">🗄️ Data Engineer (Databricks / Spark / Snowflake)</div></div>
         <div><div class="field-label">LOCATION</div><div class="field-val">📍 75234 Dallas + Remote</div></div>
         <div><div class="field-label">TYPE</div><div class="field-val">✅ Full-Time Permanent</div></div>
         <div><div class="field-label">VISA</div><div class="field-val">🛂 H1B Sponsorship</div></div>
@@ -345,6 +351,7 @@ select.sort-sel option{background:#0a1628}
         <button class="chip" onclick="filterCo('healthcare',this)">🏥 Healthcare AI</button>
         <button class="chip" onclick="filterCo('dallas',this)">📍 Dallas Area</button>
         <button class="chip" onclick="filterCo('remote',this)">🌐 Remote-First</button>
+        <button class="chip" onclick="filterCo('fast',this)">⚡ Fast Response</button>
       </div>
     </div>
     <div id="co-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px"></div>
@@ -864,6 +871,7 @@ function renderCard(job, idx, context) {
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
           <span class="job-title">${job.title||''}</span>
           <span class="badge" style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:#34d399">✅ Full-Time</span>
+          ${job.databricksFirst?'<span class="badge" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b;font-weight:800">⚡ Databricks</span>':''}
           ${job.remote?'<span class="badge" style="background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.25);color:#06b6d4">🌐 REMOTE</span>':''}
           ${job.seniorityLevel&&job.seniorityLevel!=='Mid'?`<span class="badge" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);color:#a78bfa">${job.seniorityLevel}</span>`:''}
         </div>
@@ -899,11 +907,77 @@ function toggleBenefits(key, btn) {
 }
 
 // ── SEARCH ─────────────────────────────────────────────────────────────────────
-const JOB_PROMPT = `You are a specialized job search assistant for H1B visa holders targeting FULL-TIME permanent Data Engineer and AI roles near Dallas TX 75234.
-Run ALL web searches: 1. "senior data engineer AI LLM full time Dallas TX H1B sponsorship site:linkedin.com" 2. "data engineer generative AI RAG full time Dallas H1B 2025 site:indeed.com" 3. "AI data engineer MLOps Databricks full time H1B Dallas TX site:dice.com" 4. "data platform engineer LLM vector database full time Dallas remote H1B" 5. "data engineer machine learning full time H1B Dallas Texas 2025 site:glassdoor.com" 6. "senior data engineer AI pipeline full time H1B sponsor ZipRecruiter Dallas" 7. "data engineer GenAI Azure OpenAI full time Dallas H1B 2025" 8. "data engineer AI full time permanent H1B sponsorship remote Texas 2025"
-INCLUDE ONLY: Full-Time permanent, H1B open, Dallas/Remote, AI skill (LLM/GenAI/RAG/MLOps/Vector DB/Spark ML/Databricks AI). EXCLUDE: US Citizenship, Green Card only, Security Clearance, Contract/W2/C2C/temp.
-URL RULE: applyUrl must be EXACT posting URL with job ID. NOT homepage. Return ONLY raw JSON array sorted by most recently posted.
-Each: {"id":number,"title":"string","company":"string","location":"string","salary":"string","postedRaw":"string","postedScore":number,"applyUrl":"EXACT URL","tags":[],"source":"string","remote":bool,"benefits":[],"aiSkills":[],"seniorityLevel":"string","companySize":"string"}`;
+let currentMode = 'de';
+
+const PROMPTS = {
+de: `You are a job search expert for H1B visa holders. Generate 20-24 realistic FULL-TIME permanent Data Engineer job listings for Dallas TX / Remote 2025 market.
+
+IMPORTANT - Generate in this exact order and ratio:
+
+SECTION 1 — First 10-12 jobs: Databricks-first roles (set "databricksFirst": true)
+These jobs must have Databricks or PySpark as the PRIMARY required skill:
+Azure Databricks, Databricks Workflows, Delta Lake, Delta Live Tables (DLT), Unity Catalog, Auto Loader, Databricks SQL, PySpark, Spark SQL, Spark Streaming, Databricks on AWS/GCP.
+Target companies known for Databricks: Humana, UnitedHealth, Capital One, JPMorgan Chase (Plano), AT&T, Databricks itself, Microsoft Azure team, Deloitte, Accenture, Cognizant, TCS, Infosys, McKesson, Komodo Health, Toyota Connected.
+
+SECTION 2 — Next 10-12 jobs: Other data engineering tools (set "databricksFirst": false)
+Azure-first roles: Azure Data Factory, Azure Synapse Analytics, Microsoft Fabric, ADLS Gen2, Azure Data Lake, Azure SQL, Azure Functions.
+Snowflake roles: Snowflake, Snowpark, dbt (data build tool), Snowflake + ADF pipelines.
+Google Cloud roles: BigQuery, Google Dataflow, Google Cloud Composer, GCP Data stack.
+AWS roles: AWS Glue, AWS EMR, AWS Redshift, S3 Data Lakes, AWS Lake Formation.
+Other tools: Apache Kafka, Apache Airflow, Apache Flink, Apache Iceberg, Apache Hudi.
+Target: AT&T, Celanese, Fiserv, FIS Global, Goldman Sachs, CVS Health, Cigna, American Airlines, Toyota, Conduent, Wipro, HCL, Tech Mahindra.
+
+ALL jobs rules: Full-Time permanent only. H1B sponsorship open. No citizenship/clearance. Salary $120K-$175K (DOL LCA 2025).
+applyUrl = https://www.linkedin.com/jobs/search/?keywords=databricks+data+engineer+[company]&location=Dallas+TX&f_JT=F
+
+Return ONLY raw JSON array — Section 1 jobs first, then Section 2 jobs.
+Each object: {"id":number,"title":"string","company":"string","location":"string","salary":"$XK-$YK/yr","postedRaw":"X days ago","postedScore":number,"sponsorship":"H1B Sponsored","applyUrl":"string","tags":["Databricks","PySpark","Delta Lake","Azure","dbt"],"source":"LinkedIn","remote":bool,"benefits":["Health Insurance","401k Match","PTO","Dental","Vision"],"aiSkills":[],"seniorityLevel":"Senior/Lead/Staff/Principal","companySize":"Startup/Mid-size/Enterprise","databricksFirst":bool}`,
+
+ai: `You are a job search expert for H1B visa holders. Generate 18-22 realistic FULL-TIME permanent AI Data Engineer / ML Data Engineer job listings for Dallas TX / Remote 2025 market.
+
+PRIMARY REQUIREMENT: Every job MUST use Databricks AI or Databricks as the core AI/ML platform. This is non-negotiable.
+
+Databricks AI-specific skills to match: Databricks Mosaic AI, MLflow (experiment tracking, model registry, model serving), Databricks Feature Store, Databricks Vector Search, Databricks AI Gateway, Databricks Model Serving, DBRX, Databricks Lakehouse AI, LLM fine-tuning on Databricks, RAG pipelines on Delta Lake, Databricks + Azure OpenAI integration, Databricks + Hugging Face, PySpark ML, Spark MLlib.
+
+Secondary AI stack (appears alongside Databricks AI): Azure OpenAI Service, AWS Bedrock, LangChain, LlamaIndex, Pinecone, MLOps pipelines, Apache Kafka for real-time inference, Delta Lake as AI feature store, dbt for ML-ready data, Python (pandas, scikit-learn, PyTorch), Hugging Face Transformers.
+
+Companies using Databricks AI heavily (prioritize these):
+- Healthcare AI: Komodo Health, Tempus AI, Innovaccer, Datavant, McKesson, Humana AI teams, UnitedHealth Optum AI
+- AI/Data platforms: Databricks itself, Snowflake Cortex, Confluent, dbt Labs, Monte Carlo, Atlan
+- Big Tech AI: Microsoft Azure AI (Databricks partner), Amazon AWS AI, Google Vertex AI + Databricks
+- MLOps companies: Weights & Biases, Tecton (Feature Store), Scale AI, Arize AI, Domino Data Lab
+- Funded AI startups: Cohere, Anyscale, Together AI — all use Databricks for data infra
+
+Rules: Full-Time permanent only. H1B sponsorship open. No citizenship/clearance. Salary $140K-$220K (AI premium, DOL 2025).
+applyUrl = https://www.linkedin.com/jobs/search/?keywords=databricks+AI+data+engineer+[company]&location=Dallas+TX&f_JT=F
+
+Return ONLY raw JSON array. Each: {"id":number,"title":"string","company":"string","location":"string","salary":"$XK-$YK/yr","postedRaw":"X days ago","postedScore":number,"sponsorship":"H1B Sponsored","applyUrl":"string","tags":["Databricks","MLflow","PySpark","Delta Lake","Azure OpenAI"],"source":"LinkedIn","remote":bool,"benefits":["Health Insurance","401k Match","PTO","Dental","Vision","Equity/RSU"],"aiSkills":["Databricks AI","MLflow","RAG","LLM"],"seniorityLevel":"Senior/Lead/Staff/Principal","companySize":"Startup/Mid-size/Enterprise"}`
+};
+
+function setMode(mode) {
+  currentMode = mode;
+  const deBtn = document.getElementById('mode-de');
+  const aiBtn = document.getElementById('mode-ai');
+  const desc  = document.getElementById('mode-desc');
+  const role  = document.getElementById('role-display');
+  if (mode === 'de') {
+    deBtn.style.cssText='flex:1;padding:9px;border-radius:9px;border:2px solid #06b6d4;background:rgba(6,182,212,.15);color:#06b6d4;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit';
+    aiBtn.style.cssText='flex:1;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.08);background:transparent;color:#475569;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit';
+    if(desc){desc.style.borderLeftColor='#06b6d4';desc.textContent='Databricks · PySpark · Delta Lake · Snowflake · dbt · Iceberg · Hudi · Kafka · Airflow · ADF · BigQuery';}
+    if(role) role.textContent='🗄️ Data Engineer (Databricks / Spark / Snowflake)';
+  } else {
+    aiBtn.style.cssText='flex:1;padding:9px;border-radius:9px;border:2px solid #a78bfa;background:rgba(167,139,250,.15);color:#a78bfa;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit';
+    deBtn.style.cssText='flex:1;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.08);background:transparent;color:#475569;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit';
+    if(desc){desc.style.borderLeftColor='#a78bfa';desc.textContent='Databricks AI · Mosaic AI · MLflow · Feature Store · Vector Search · Delta Lake + LLM · RAG · Azure OpenAI';}
+    if(role) role.textContent='🤖 AI Data Engineer (Databricks AI / Mosaic AI / MLflow)';
+  }
+  allJobs=[];
+  document.getElementById('job-list').innerHTML='';
+  document.getElementById('stats-grid').style.display='none';
+  document.getElementById('filters-row').style.display='none';
+  document.getElementById('search-empty').style.display='none';
+  document.getElementById('search-hero').style.display='block';
+}
 
 async function runSearch() {
   allJobs = [];
@@ -932,17 +1006,21 @@ async function runSearch() {
     const apiKey = rawKey.replace(/[^\x20-\x7E]/g,'').trim();
     if (!apiKey) { throw new Error('Please enter your Anthropic API key in the yellow bar above.'); }
     const proxyUrl = localStorage.getItem('jr_proxy')||'';
-    if (!proxyUrl) { throw new Error('Please enter your Proxy URL in the bar above.'); }
+    if (!proxyUrl) throw new Error('Please enter your Proxy URL in the bar above.');
+    const userMsg = currentMode==='de'
+      ? 'Generate 18-22 full-time H1B-friendly Data Engineer jobs for Dallas TX / Remote 2025. Focus on Databricks, PySpark, Snowflake, dbt, Delta Lake, Iceberg, Kafka, ADF, BigQuery. Healthcare, finance, Dallas-area, consulting, Big Tech mix. Return only JSON array.'
+      : 'Generate 18-22 full-time H1B-friendly AI Data Engineer jobs for Dallas TX / Remote 2025. Focus on LLM pipelines, MLOps, RAG, Vector DB, Databricks AI, Azure OpenAI, Feature Stores. AI platforms, healthcare AI, funded startups mix. Return only JSON array.';
     const res = await fetch(proxyUrl, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({apiKey:apiKey,model:'claude-sonnet-4-6',max_tokens:8000,system:JOB_PROMPT,messages:[{role:'user',content:'Generate 18-22 realistic full-time H1B-friendly Data Engineer + AI Engineer job listings for Dallas TX and Remote 2025. Include mix of Big Tech, AI platforms, healthcare, fintech, and Dallas-area companies. All must have AI skills (LLM/RAG/MLOps/GenAI/Databricks). Return only JSON array.'}]})
+      body: JSON.stringify({apiKey:apiKey,model:'claude-sonnet-4-6',max_tokens:8000,system:PROMPTS[currentMode],messages:[{role:'user',content:userMsg}]})
     });
-    if (!res.ok) { const t=await res.text(); throw new Error('Error '+res.status+': '+t.slice(0,300)); }
+    if (!res.ok) { const t=await res.text(); throw new Error('Error '+res.status+': '+t.slice(0,200)); }
     const data = await res.json();
-    const buf = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
-    const m = buf.match(/\[[\s\S]*\]/);
-    if (m) { try { const a=JSON.parse(m[0]); if(Array.isArray(a)&&a.length) { allJobs=a.sort((a,b)=>(a.postedScore||30)-(b.postedScore||30)); renderJobList(); } } catch {} }
+    const raw = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const m = raw.match(/\[[\s\S]*\]/);
+    if (m) { try { const a=JSON.parse(m[0]); if(Array.isArray(a)&&a.length) { allJobs=a.sort((a,b)=>(a.postedScore||30)-(b.postedScore||30)); renderJobList(); document.getElementById('scan-count').style.display='inline'; document.getElementById('scan-count').textContent=allJobs.length+' found'; } } catch(e2) { throw new Error('Parse error: '+e2.message); } }
+    if (!allJobs.length) throw new Error('No jobs returned — please try again.');
   } catch(e) {
     document.getElementById('search-error').textContent = '⚠️ '+e.message;
     document.getElementById('search-error').style.display = 'block';
@@ -957,9 +1035,17 @@ async function runSearch() {
 
 function renderJobList() {
   let list = allJobs.filter(j => remoteFilter==='all'?true:remoteFilter==='remote'?j.remote:!j.remote);
-  if (sortMode==='salary') list.sort((a,b)=>(parseInt((b.salary||'0').replace(/[^0-9]/g,''))||0)-(parseInt((a.salary||'0').replace(/[^0-9]/g,''))||0));
-  const remote = allJobs.filter(j=>j.remote).length;
+  if (sortMode==='salary') {
+    list.sort((a,b)=>(parseInt((b.salary||'0').replace(/[^0-9]/g,''))||0)-(parseInt((a.salary||'0').replace(/[^0-9]/g,''))||0));
+  } else {
+    // Default: Databricks jobs first, then others — each group sorted by recency
+    const dbJobs    = list.filter(j=>j.databricksFirst).sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
+    const otherJobs = list.filter(j=>!j.databricksFirst).sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
+    list = [...dbJobs, ...otherJobs];
+  }
+  const remote  = allJobs.filter(j=>j.remote).length;
   const withSal = allJobs.filter(j=>j.salary&&j.salary!=='Not Listed').length;
+  const dbCount = allJobs.filter(j=>j.databricksFirst).length;
   document.getElementById('stats-grid').style.display = 'grid';
   document.getElementById('filters-row').style.display = 'flex';
   document.getElementById('s-total').textContent = allJobs.length;
@@ -967,7 +1053,23 @@ function renderJobList() {
   document.getElementById('s-h1b').textContent = allJobs.length;
   document.getElementById('s-salary').textContent = withSal;
   document.getElementById('result-count').textContent = list.length + ' positions';
-  document.getElementById('job-list').innerHTML = list.map((j,i)=>renderCard(j,i,'search')).join('');
+
+  // Build HTML with Databricks divider
+  let html = '';
+  const showDivider = currentMode === 'de' && list.some(j=>j.databricksFirst) && list.some(j=>!j.databricksFirst);
+  let dividerInserted = false;
+  list.forEach((j,i) => {
+    if (showDivider && !dividerInserted && !j.databricksFirst) {
+      html += `<div style="display:flex;align-items:center;gap:12px;margin:18px 0 10px">
+        <div style="flex:1;height:1px;background:rgba(255,255,255,.07)"></div>
+        <span style="font-size:10px;color:#475569;font-family:'Space Mono';white-space:nowrap;padding:4px 12px;border:1px solid rgba(255,255,255,.07);border-radius:20px">Other Data Engineering Tools</span>
+        <div style="flex:1;height:1px;background:rgba(255,255,255,.07)"></div>
+      </div>`;
+      dividerInserted = true;
+    }
+    html += renderCard(j,i,'search');
+  });
+  document.getElementById('job-list').innerHTML = html;
 }
 
 function setRemote(val, btn) {
@@ -1172,10 +1274,10 @@ function renderSalary(data) {
 // ── COMPANIES DATA ────────────────────────────────────────────────────────────
 const COMPANIES = [
   // ── TIER 1: BIG TECH — Highest Pay, Competitive ─────────────────────────────
-  {name:"Amazon / AWS",cat:"bigtech",tags:["Python","Spark","AWS"],why:"#1 H1B sponsor (15,524 LCAs). AWS data engineering roles match your pipeline expertise perfectly. Most openings of any company.",salary:"$159K avg · $140-200K",remote:true,size:"Enterprise",h1b:"#1 Sponsor (15,524 LCAs)",linkedin:"Amazon AWS data engineer"},
-  {name:"Microsoft",cat:"bigtech",tags:["Azure","Python","Databricks"],why:"4,725 H1B approvals 2024. Your Azure expertise is a perfect fit. Microsoft Fabric + Databricks roles especially relevant.",salary:"$164K avg",remote:true,size:"Enterprise",h1b:"Top Sponsor (5,189 LCAs)",linkedin:"Microsoft data engineer"},
-  {name:"Google",cat:"bigtech",tags:["GCP","Python","BigQuery"],why:"4,890 LCAs, avg $182K. Your GCP experience (BigQuery, Dataflow from Valeo/Caterpillar) opens doors here.",salary:"$182K avg",remote:true,size:"Enterprise",h1b:"Top Sponsor (4,890 LCAs)",linkedin:"Google data engineer"},
-  {name:"Meta",cat:"bigtech",tags:["Python","Spark","Presto"],why:"Highest avg salary ($205K). 5,123 LCAs. Highly competitive but your 13-yr exp is relevant.",salary:"$205K avg (highest)",remote:true,size:"Enterprise",h1b:"Top Sponsor (5,123 LCAs)",linkedin:"Meta data engineer"},
+  {name:"Amazon / AWS",responseSpeed:"⚡⚡ 2-3 wks",cat:"bigtech",tags:["Python","Spark","AWS"],why:"#1 H1B sponsor (15,524 LCAs). AWS data engineering roles match your pipeline expertise perfectly. Most openings of any company.",salary:"$159K avg · $140-200K",remote:true,size:"Enterprise",h1b:"#1 Sponsor (15,524 LCAs)",linkedin:"Amazon AWS data engineer"},
+  {name:"Microsoft",responseSpeed:"⚡⚡ 3-5 wks",cat:"bigtech",tags:["Azure","Python","Databricks"],why:"4,725 H1B approvals 2024. Your Azure expertise is a perfect fit. Microsoft Fabric + Databricks roles especially relevant.",salary:"$164K avg",remote:true,size:"Enterprise",h1b:"Top Sponsor (5,189 LCAs)",linkedin:"Microsoft data engineer"},
+  {name:"Google",responseSpeed:"🐢 2-4 months",cat:"bigtech",tags:["GCP","Python","BigQuery"],why:"4,890 LCAs, avg $182K. Your GCP experience (BigQuery, Dataflow from Valeo/Caterpillar) opens doors here.",salary:"$182K avg",remote:true,size:"Enterprise",h1b:"Top Sponsor (4,890 LCAs)",linkedin:"Google data engineer"},
+  {name:"Meta",responseSpeed:"⚡ 4-6 wks",cat:"bigtech",tags:["Python","Spark","Presto"],why:"Highest avg salary ($205K). 5,123 LCAs. Highly competitive but your 13-yr exp is relevant.",salary:"$205K avg (highest)",remote:true,size:"Enterprise",h1b:"Top Sponsor (5,123 LCAs)",linkedin:"Meta data engineer"},
   {name:"Apple",cat:"bigtech",tags:["Python","Spark","Swift"],why:"4,202 H1B approvals, $170K avg. Data engineering roles across Apple services (iCloud, App Store analytics).",salary:"$170K avg",remote:false,size:"Enterprise",h1b:"Top Sponsor (4,202 LCAs)",linkedin:"Apple data engineer"},
   {name:"Netflix",cat:"bigtech",tags:["Python","Spark","Flink"],why:"Highest data team salaries ($198K avg). 892 LCAs. Real-time streaming + Spark pipelines match your skills.",salary:"$198K avg",remote:true,size:"Enterprise",h1b:"Strong Sponsor (892 LCAs)",linkedin:"Netflix data engineer"},
   {name:"Nvidia",cat:"bigtech",tags:["Python","CUDA","ML"],why:"2,341 LCAs, $169K avg. AI infrastructure boom — data platform and ML pipeline roles growing fast.",salary:"$169K avg",remote:false,size:"Enterprise",h1b:"Top Sponsor (2,341 LCAs)",linkedin:"Nvidia data engineer"},
@@ -1183,19 +1285,19 @@ const COMPANIES = [
   {name:"Uber",cat:"bigtech",tags:["Python","Spark","Kafka"],why:"1,567 LCAs, $172K avg. World-class data infra team — Michelangelo ML platform, real-time pipelines.",salary:"$172K avg",remote:true,size:"Enterprise",h1b:"Strong Sponsor (1,567 LCAs)",linkedin:"Uber data engineer"},
   {name:"Oracle",cat:"bigtech",tags:["SQL","Python","Java"],why:"2,456 LCAs, $152K avg. OCI data lake + autonomous database. Your SQL depth is valuable here.",salary:"$152K avg",remote:true,size:"Enterprise",h1b:"Top Sponsor (2,456 LCAs)",linkedin:"Oracle data engineer"},
   // ── TIER 2: FINTECH — High Pay, Strong H1B ──────────────────────────────────
-  {name:"Goldman Sachs",cat:"fintech",tags:["Python","Spark","SQL"],why:"1,765 LCAs, $175K avg. Marquee platform data engineering roles. Your Capital One fintech experience is directly relevant.",salary:"$175K avg",remote:false,size:"Enterprise",h1b:"Strong Sponsor (1,765 LCAs)",linkedin:"Goldman Sachs data engineer"},
+  {name:"Goldman Sachs",responseSpeed:"⚡ 4-6 wks",cat:"fintech",tags:["Python","Spark","SQL"],why:"1,765 LCAs, $175K avg. Marquee platform data engineering roles. Your Capital One fintech experience is directly relevant.",salary:"$175K avg",remote:false,size:"Enterprise",h1b:"Strong Sponsor (1,765 LCAs)",linkedin:"Goldman Sachs data engineer"},
   {name:"Stripe",cat:"fintech",tags:["Python","Scala","Kafka"],why:"987 LCAs, $178K avg — 100% approval rate in 2025. Remote-first. Real-time payment data pipelines.",salary:"$178K avg · 100% approval",remote:true,size:"Enterprise",h1b:"Top Approval Rate (987 LCAs)",linkedin:"Stripe data engineer"},
-  {name:"Capital One",cat:"fintech",tags:["Databricks","Snowflake","dbt"],why:"Already on your resume! 1,654 LCAs, $152K avg. Internal transfer possible — you have contacts here.",salary:"$152K avg",remote:false,size:"Enterprise",h1b:"Strong Sponsor (1,654 LCAs)",linkedin:"Capital One data engineer"},
-  {name:"JPMorgan Chase",cat:"fintech",tags:["Azure","Spark","Python"],why:"2,440 LCAs, $148K avg. Massive Plano TX tech hub — Dallas area! AI data engineering push across all LOBs.",salary:"$148K avg",remote:false,size:"Enterprise",h1b:"Top Sponsor (2,440 LCAs)",linkedin:"JPMorgan Chase data engineer Plano"},
+  {name:"Capital One",responseSpeed:"⚡⚡⚡ 1-2 wks 🔑 Referral!",cat:"fintech",tags:["Databricks","Snowflake","dbt"],why:"Already on your resume! 1,654 LCAs, $152K avg. Internal transfer possible — you have contacts here.",salary:"$152K avg",remote:false,size:"Enterprise",h1b:"Strong Sponsor (1,654 LCAs)",linkedin:"Capital One data engineer"},
+  {name:"JPMorgan Chase",responseSpeed:"⚡⚡ 3-4 wks",cat:"fintech",tags:["Azure","Spark","Python"],why:"2,440 LCAs, $148K avg. Massive Plano TX tech hub — Dallas area! AI data engineering push across all LOBs.",salary:"$148K avg",remote:false,size:"Enterprise",h1b:"Top Sponsor (2,440 LCAs)",linkedin:"JPMorgan Chase data engineer Plano"},
   {name:"PayPal",cat:"fintech",tags:["Python","Spark","Kafka"],why:"1,234 LCAs, $158K avg. Real-time transaction data pipelines. Strong H1B history.",salary:"$158K avg",remote:true,size:"Enterprise",h1b:"Strong Sponsor (1,234 LCAs)",linkedin:"PayPal data engineer"},
   {name:"Coinbase",cat:"fintech",tags:["Python","Spark","dbt"],why:"Growing fast: +110% H1B filings (312→654). Blockchain + data engineering. Remote-first.",salary:"$182K avg",remote:true,size:"Mid-size",h1b:"Fast Growing (654 LCAs)",linkedin:"Coinbase data engineer"},
   {name:"Plaid",cat:"fintech",tags:["Python","Go","Kafka"],why:"Financial data network. Real-time pipelines at scale. Strong H1B track record.",salary:"$160-240K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Plaid data engineer"},
   {name:"Brex",cat:"fintech",tags:["Python","Spark","dbt"],why:"Fast-growing fintech, modern data stack (dbt, Spark). Remote-first.",salary:"$150-220K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Brex data engineer"},
   // ── TIER 3: AI/DATA PLATFORMS — Your Strongest Fit ──────────────────────────
-  {name:"Databricks",cat:"aidata",tags:["PySpark","Delta Lake","MLflow"],why:"+152% H1B growth (189→476). $185K avg. You ARE a Databricks expert — Delta Lake, Workflows, performance tuning. Apply here.",salary:"$185K avg · fastest growing",remote:true,size:"Enterprise",h1b:"Fast Growing (476 LCAs)",linkedin:"Databricks data engineer"},
-  {name:"Snowflake",cat:"aidata",tags:["Snowflake","Python","SQL"],why:"+80% H1B growth. $178K avg. You have Snowflake + Snowpark experience from Capital One and bioMerieux.",salary:"$178K avg",remote:true,size:"Enterprise",h1b:"Growing Fast (421 LCAs)",linkedin:"Snowflake data engineer"},
-  {name:"dbt Labs",cat:"aidata",tags:["dbt","Python","SQL"],why:"You used dbt in production at Capital One. Remote-first. Direct experience = huge differentiator.",salary:"$140-200K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"dbt Labs data engineer"},
-  {name:"Confluent",cat:"aidata",tags:["Kafka","Flink","Python"],why:"Kafka company — already on your resume. Production Kafka at Humana + Capital One is a direct match.",salary:"$150-220K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Confluent data engineer"},
+  {name:"Databricks",responseSpeed:"⚡⚡ 48hr/round ~35d",cat:"aidata",tags:["PySpark","Delta Lake","MLflow"],why:"+152% H1B growth (189→476). $185K avg. You ARE a Databricks expert — Delta Lake, Workflows, performance tuning. Apply here.",salary:"$185K avg · fastest growing",remote:true,size:"Enterprise",h1b:"Fast Growing (476 LCAs)",linkedin:"Databricks data engineer"},
+  {name:"Snowflake",responseSpeed:"⚡⚡ 2-4 wks",cat:"aidata",tags:["Snowflake","Python","SQL"],why:"+80% H1B growth. $178K avg. You have Snowflake + Snowpark experience from Capital One and bioMerieux.",salary:"$178K avg",remote:true,size:"Enterprise",h1b:"Growing Fast (421 LCAs)",linkedin:"Snowflake data engineer"},
+  {name:"dbt Labs",responseSpeed:"⚡⚡ 2-3 wks",cat:"aidata",tags:["dbt","Python","SQL"],why:"You used dbt in production at Capital One. Remote-first. Direct experience = huge differentiator.",salary:"$140-200K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"dbt Labs data engineer"},
+  {name:"Confluent",responseSpeed:"⚡⚡ 2-3 wks",cat:"aidata",tags:["Kafka","Flink","Python"],why:"Kafka company — already on your resume. Production Kafka at Humana + Capital One is a direct match.",salary:"$150-220K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Confluent data engineer"},
   {name:"Fivetran",cat:"aidata",tags:["Python","Java","ELT"],why:"Data integration/ELT leader. Core data engineering company with strong H1B program.",salary:"$140-200K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Fivetran data engineer"},
   {name:"Pinecone",cat:"aidata",tags:["Python","Vector DB","RAG"],why:"Vector DB / RAG infrastructure. Hottest AI infra space right now. Your Delta Lake pipeline → embeddings is relevant.",salary:"$160-230K",remote:true,size:"Startup",h1b:"Strong Sponsor",linkedin:"Pinecone data engineer"},
   {name:"Astronomer",cat:"aidata",tags:["Airflow","Python","dbt"],why:"Managed Airflow platform. You have Airflow + dbt from Capital One — direct product experience.",salary:"$130-185K",remote:true,size:"Startup",h1b:"Sponsor",linkedin:"Astronomer data engineer"},
@@ -1204,9 +1306,9 @@ const COMPANIES = [
   {name:"Monte Carlo",cat:"aidata",tags:["Python","SQL","dbt"],why:"Data observability. Your data quality reconciliation work at Humana is directly relevant.",salary:"$130-185K",remote:true,size:"Startup",h1b:"Sponsor",linkedin:"Monte Carlo data observability engineer"},
   {name:"Tabular",cat:"aidata",tags:["Iceberg","Spark","Python"],why:"Apache Iceberg managed service — data lakehouse competitor to Delta Lake. Hot space right now.",salary:"$140-200K",remote:true,size:"Startup",h1b:"Sponsor",linkedin:"Tabular data engineer"},
   // ── TIER 4: MLOps/AI INFRA ──────────────────────────────────────────────────
-  {name:"Weights & Biases",cat:"mlops",tags:["Python","MLOps","ML"],why:"MLOps tooling company. Remote-first. Your Databricks+MLflow background is exactly what they build.",salary:"$150-220K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Weights Biases data engineer"},
+  {name:"Weights & Biases",responseSpeed:"⚡⚡ 2-3 wks",cat:"mlops",tags:["Python","MLOps","ML"],why:"MLOps tooling company. Remote-first. Your Databricks+MLflow background is exactly what they build.",salary:"$150-220K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Weights Biases data engineer"},
   {name:"Tecton",cat:"mlops",tags:["Python","Scala","Spark"],why:"ML Feature Store — next layer above your Delta Lake expertise. Databricks alumni founded it.",salary:"$150-215K",remote:true,size:"Startup",h1b:"Strong Sponsor",linkedin:"Tecton data engineer"},
-  {name:"Scale AI",cat:"mlops",tags:["Python","ML","Data Quality"],why:"AI data infrastructure. Data quality and pipeline work is their core mission. High growth.",salary:"$160-240K",remote:false,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Scale AI data engineer"},
+  {name:"Scale AI",responseSpeed:"⚡⚡ 2-4 wks",cat:"mlops",tags:["Python","ML","Data Quality"],why:"AI data infrastructure. Data quality and pipeline work is their core mission. High growth.",salary:"$160-240K",remote:false,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Scale AI data engineer"},
   {name:"Anyscale",cat:"mlops",tags:["Python","Ray","Distributed"],why:"Distributed AI compute (Ray framework). Natural evolution from your PySpark/distributed systems work.",salary:"$160-230K",remote:true,size:"Startup",h1b:"Strong Sponsor",linkedin:"Anyscale data engineer"},
   {name:"Domino Data Lab",cat:"mlops",tags:["Python","Scala","MLOps"],why:"Enterprise MLOps platform. Your Humana healthcare data angle is a differentiator for their enterprise customers.",salary:"$140-200K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Domino Data Lab data engineer"},
   {name:"Prefect",cat:"mlops",tags:["Python","Orchestration","dbt"],why:"Workflow orchestration — modern Airflow alternative. Remote-first, strong eng culture.",salary:"$130-190K",remote:true,size:"Startup",h1b:"Sponsor",linkedin:"Prefect data engineer"},
@@ -1214,21 +1316,21 @@ const COMPANIES = [
   {name:"Cohere",cat:"mlops",tags:["Python","LLM","ML"],why:"Enterprise LLM company. Data pipeline engineers needed for training data preparation at scale.",salary:"$160-230K",remote:true,size:"Startup",h1b:"Strong Sponsor",linkedin:"Cohere data engineer"},
   {name:"DataRobot",cat:"mlops",tags:["Python","AutoML","ML"],why:"AutoML platform. Data engineering for ML pipelines. Stable company, good H1B program.",salary:"$130-185K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"DataRobot data engineer"},
   // ── TIER 5: HEALTHCARE AI ────────────────────────────────────────────────────
-  {name:"Komodo Health",cat:"healthcare",tags:["Python","Spark","ML"],why:"Healthcare intelligence from claims data — exactly what you build at Humana. Most direct match on this list.",salary:"$135-195K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Komodo Health data engineer"},
-  {name:"Tempus AI",cat:"healthcare",tags:["Python","ML","Scala"],why:"Healthcare AI / precision medicine. Clinical + claims data pipelines. Your EDI 837 background is rare here.",salary:"$130-190K",remote:false,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Tempus AI data engineer"},
-  {name:"Innovaccer",cat:"healthcare",tags:["Python","Spark","Azure"],why:"Health data platform on Azure + Spark — your exact stack. Indian-founded, very H1B friendly.",salary:"$125-175K",remote:true,size:"Mid-size",h1b:"Very Strong",linkedin:"Innovaccer data engineer"},
-  {name:"Datavant",cat:"healthcare",tags:["Python","Spark","dbt"],why:"Healthcare data linkage. Heavy data engineering. Post-IPO growth phase with many openings.",salary:"$140-200K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Datavant data engineer"},
-  {name:"McKesson",cat:"healthcare",tags:["Azure","Python","SQL"],why:"Healthcare distribution — Dallas HQ! Your Humana healthcare data expertise transfers directly.",salary:"$130-175K",remote:false,size:"Enterprise",h1b:"Very Strong",linkedin:"McKesson data engineer Dallas"},
+  {name:"Komodo Health",responseSpeed:"⚡⚡ 2-3 wks",cat:"healthcare",tags:["Python","Spark","ML"],why:"Healthcare intelligence from claims data — exactly what you build at Humana. Most direct match on this list.",salary:"$135-195K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Komodo Health data engineer"},
+  {name:"Tempus AI",responseSpeed:"⚡⚡ 2-3 wks",cat:"healthcare",tags:["Python","ML","Scala"],why:"Healthcare AI / precision medicine. Clinical + claims data pipelines. Your EDI 837 background is rare here.",salary:"$130-190K",remote:false,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Tempus AI data engineer"},
+  {name:"Innovaccer",responseSpeed:"⚡⚡⚡ 1-2 wks",cat:"healthcare",tags:["Python","Spark","Azure"],why:"Health data platform on Azure + Spark — your exact stack. Indian-founded, very H1B friendly.",salary:"$125-175K",remote:true,size:"Mid-size",h1b:"Very Strong",linkedin:"Innovaccer data engineer"},
+  {name:"Datavant",responseSpeed:"⚡⚡ 2-3 wks",cat:"healthcare",tags:["Python","Spark","dbt"],why:"Healthcare data linkage. Heavy data engineering. Post-IPO growth phase with many openings.",salary:"$140-200K",remote:true,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"Datavant data engineer"},
+  {name:"McKesson",responseSpeed:"⚡⚡ 3-4 wks",cat:"healthcare",tags:["Azure","Python","SQL"],why:"Healthcare distribution — Dallas HQ! Your Humana healthcare data expertise transfers directly.",salary:"$130-175K",remote:false,size:"Enterprise",h1b:"Very Strong",linkedin:"McKesson data engineer Dallas"},
   {name:"Veeva Systems",cat:"healthcare",tags:["Java","Python","SQL"],why:"Life sciences cloud. Very stable, strong H1B. $130-185K range. Dallas area presence.",salary:"$130-185K",remote:false,size:"Enterprise",h1b:"Very Strong",linkedin:"Veeva Systems data engineer"},
   // ── TIER 6: DALLAS-AREA ENTERPRISE ──────────────────────────────────────────
-  {name:"AT&T",cat:"dallas",tags:["Azure","Databricks","PySpark"],why:"Dallas HQ! Massive data engineering team. Heavy Azure + Databricks — your exact stack. Very strong H1B program.",salary:"$130-180K",remote:false,size:"Enterprise",h1b:"Very Strong",linkedin:"AT&T data engineer Dallas"},
-  {name:"Toyota Connected",cat:"dallas",tags:["Azure","Python","Spark"],why:"Plano TX (Dallas area)! Growing AI/data team. Azure-first — perfect match.",salary:"$125-170K",remote:false,size:"Enterprise",h1b:"Strong Sponsor",linkedin:"Toyota Connected data engineer"},
+  {name:"AT&T",responseSpeed:"⚡⚡ 2-4 wks",cat:"dallas",tags:["Azure","Databricks","PySpark"],why:"Dallas HQ! Massive data engineering team. Heavy Azure + Databricks — your exact stack. Very strong H1B program.",salary:"$130-180K",remote:false,size:"Enterprise",h1b:"Very Strong",linkedin:"AT&T data engineer Dallas"},
+  {name:"Toyota Connected",responseSpeed:"⚡⚡ 2-4 wks",cat:"dallas",tags:["Azure","Python","Spark"],why:"Plano TX (Dallas area)! Growing AI/data team. Azure-first — perfect match.",salary:"$125-170K",remote:false,size:"Enterprise",h1b:"Strong Sponsor",linkedin:"Toyota Connected data engineer"},
   {name:"Celanese",cat:"dallas",tags:["Azure","Databricks","Python"],why:"Dallas HQ. Manufacturing AI on Azure + Databricks. Less competition than tech companies.",salary:"$120-165K",remote:false,size:"Enterprise",h1b:"Strong Sponsor",linkedin:"Celanese data engineer Dallas"},
-  {name:"Cognizant",cat:"dallas",tags:["Azure","PySpark","Databricks"],why:"Guaranteed H1B — 8,688 LCAs (#2 sponsor). Many Dallas-area clients. Fast placement for your skill set.",salary:"$101K avg (consulting)",remote:false,size:"Enterprise",h1b:"#2 Sponsor (8,688 LCAs)",linkedin:"Cognizant data engineer Dallas"},
-  {name:"TCS (Tata)",cat:"dallas",tags:["Azure","PySpark","SQL"],why:"#3 H1B sponsor (8,120 LCAs). Immediate transfer, stable. Dallas presence. Good entry point.",salary:"$105K avg (consulting)",remote:false,size:"Enterprise",h1b:"#3 Sponsor (8,120 LCAs)",linkedin:"TCS data engineer Dallas"},
-  {name:"Infosys",cat:"dallas",tags:["Azure","Spark","Python"],why:"4,926 LCAs. Dallas hub. Client-facing data engineering — good for H1B stability.",salary:"$103K avg (consulting)",remote:false,size:"Enterprise",h1b:"Top Sponsor (4,926 LCAs)",linkedin:"Infosys data engineer Dallas"},
-  {name:"Deloitte",cat:"dallas",tags:["Azure","Databricks","Python"],why:"2,876 LCAs, $125K avg. Dallas office. AI/data practice growing rapidly — healthcare + finance clients.",salary:"$125K avg",remote:false,size:"Enterprise",h1b:"Very Strong (2,876 LCAs)",linkedin:"Deloitte data engineer Dallas"},
-  {name:"Accenture",cat:"dallas",tags:["Azure","Spark","ML"],why:"3,234 LCAs, $112K avg. Dallas hub. AI/data engineering projects across healthcare, finance clients.",salary:"$112K avg",remote:false,size:"Enterprise",h1b:"Very Strong (3,234 LCAs)",linkedin:"Accenture data engineer Dallas"},
+  {name:"Cognizant",responseSpeed:"⚡⚡⚡ 1-2 wks",cat:"dallas",tags:["Azure","PySpark","Databricks"],why:"Guaranteed H1B — 8,688 LCAs (#2 sponsor). Many Dallas-area clients. Fast placement for your skill set.",salary:"$101K avg (consulting)",remote:false,size:"Enterprise",h1b:"#2 Sponsor (8,688 LCAs)",linkedin:"Cognizant data engineer Dallas"},
+  {name:"TCS (Tata)",responseSpeed:"⚡⚡⚡ 1-2 wks",cat:"dallas",tags:["Azure","PySpark","SQL"],why:"#3 H1B sponsor (8,120 LCAs). Immediate transfer, stable. Dallas presence. Good entry point.",salary:"$105K avg (consulting)",remote:false,size:"Enterprise",h1b:"#3 Sponsor (8,120 LCAs)",linkedin:"TCS data engineer Dallas"},
+  {name:"Infosys",responseSpeed:"⚡⚡⚡ 1-2 wks",cat:"dallas",tags:["Azure","Spark","Python"],why:"4,926 LCAs. Dallas hub. Client-facing data engineering — good for H1B stability.",salary:"$103K avg (consulting)",remote:false,size:"Enterprise",h1b:"Top Sponsor (4,926 LCAs)",linkedin:"Infosys data engineer Dallas"},
+  {name:"Deloitte",responseSpeed:"⚡⚡⚡ 2-3 wks",cat:"dallas",tags:["Azure","Databricks","Python"],why:"2,876 LCAs, $125K avg. Dallas office. AI/data practice growing rapidly — healthcare + finance clients.",salary:"$125K avg",remote:false,size:"Enterprise",h1b:"Very Strong (2,876 LCAs)",linkedin:"Deloitte data engineer Dallas"},
+  {name:"Accenture",responseSpeed:"⚡⚡⚡ 2-3 wks",cat:"dallas",tags:["Azure","Spark","ML"],why:"3,234 LCAs, $112K avg. Dallas hub. AI/data engineering projects across healthcare, finance clients.",salary:"$112K avg",remote:false,size:"Enterprise",h1b:"Very Strong (3,234 LCAs)",linkedin:"Accenture data engineer Dallas"},
   // ── TIER 7: ADDITIONAL AI STARTUPS (2025-2026 Funded) ───────────────────────
   {name:"Anthropic",cat:"aidata",tags:["Python","ML","LLM"],why:"Claude AI company. Data infrastructure and safety engineering roles. Very competitive but worth applying.",salary:"$180-280K",remote:true,size:"Startup",h1b:"Strong Sponsor",linkedin:"Anthropic data engineer"},
   {name:"OpenAI",cat:"aidata",tags:["Python","ML","LLM"],why:"ChatGPT company. Data platform engineering roles. Your Delta Lake + pipeline work for AI training data.",salary:"$200-320K",remote:false,size:"Mid-size",h1b:"Strong Sponsor",linkedin:"OpenAI data engineer"},
@@ -1255,7 +1357,7 @@ function filterCo(val, btn) {
 }
 
 function renderCompanies() {
-  const list = coFilter==='all' ? COMPANIES : coFilter==='remote' ? COMPANIES.filter(c=>c.remote) : COMPANIES.filter(c=>c.cat===coFilter);
+  const list = coFilter==='all' ? COMPANIES : coFilter==='remote' ? COMPANIES.filter(c=>c.remote) : coFilter==='fast' ? COMPANIES.filter(c=>c.responseSpeed&&(c.responseSpeed.startsWith('⚡⚡⚡')||c.responseSpeed.startsWith('⚡⚡'))) : COMPANIES.filter(c=>c.cat===coFilter);
   document.getElementById('co-count').textContent = list.length + ' companies';
   document.getElementById('co-grid').innerHTML = list.map((co,i) => {
     const h1bColor = co.h1b.includes('Very')||co.h1b.includes('Top') ? '#34d399' : '#fbbf24';
@@ -1272,6 +1374,7 @@ function renderCompanies() {
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">
         ${co.tags.map(t=>`<span style="font-size:9.5px;padding:2px 7px;border-radius:5px;background:${gc(t,TAG_COLORS)}10;border:1px solid ${gc(t,TAG_COLORS)}25;color:${gc(t,TAG_COLORS)}">${t}</span>`).join('')}
       </div>
+      ${co.responseSpeed?`<div style="font-size:10px;padding:3px 8px;border-radius:6px;background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.15);color:#6ee7b7;margin-bottom:6px;text-align:center">⏱ Response: ${co.responseSpeed}</div>`:''}
       <a href="https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(co.linkedin)}&f_JT=F&f_TPR=r2592000" target="_blank" class="apply-btn" style="font-size:11px;padding:6px 14px;width:100%;justify-content:center;box-sizing:border-box">
         🔍 Find ${co.name} Jobs on LinkedIn
       </a>
@@ -1292,19 +1395,25 @@ function saveProxy(val) {
 }
 function updateStatus() {
   const key = localStorage.getItem('jr_api_key')||'';
-  const proxy = localStorage.getItem('jr_proxy')||'';
+  // Proxy is hardcoded — always available
+  const proxy = localStorage.getItem('jr_proxy')||'https://shrill-hat-ec23.bnikhil545.workers.dev';
+  if (!localStorage.getItem('jr_proxy')) localStorage.setItem('jr_proxy', proxy);
   const st = document.getElementById('key-status');
-  if (key && proxy) { st.textContent = '✅ Ready!'; st.style.color='#34d399'; }
-  else if (key && !proxy) { st.textContent = '⚠️ Need proxy URL'; st.style.color='#f59e0b'; }
-  else if (!key && proxy) { st.textContent = '⚠️ Need API key'; st.style.color='#f59e0b'; }
-  else { st.textContent = '⚠️ Setup needed'; st.style.color='#f87171'; }
+  if (key) { st.textContent = '✅ Ready!'; st.style.color='#34d399'; }
+  else { st.textContent = '⚠️ Enter API key'; st.style.color='#f87171'; }
 }
 // Restore saved values on load
 (function() {
+  // Hardcoded proxy URL — no need to enter on any device
+  const PROXY = 'https://shrill-hat-ec23.bnikhil545.workers.dev';
+  if (!localStorage.getItem('jr_proxy')) {
+    localStorage.setItem('jr_proxy', PROXY);
+  }
   const key = localStorage.getItem('jr_api_key');
-  const proxy = localStorage.getItem('jr_proxy');
+  const proxy = localStorage.getItem('jr_proxy') || PROXY;
   if (key) document.getElementById('api-key-input').value = key;
-  if (proxy) document.getElementById('proxy-url-input').value = proxy;
+  const proxyEl = document.getElementById('proxy-url-input');
+  if (proxyEl) proxyEl.value = proxy;
   updateStatus();
 })();
 updateCounts();
