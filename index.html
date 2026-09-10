@@ -136,7 +136,7 @@ select.sort-sel option{background:#0a1628}
     </div>
     <div class="header-badges">
       <span class="hbadge no">🚫 No Citizenship</span>
-      <span class="hbadge no">🚫 No Contract/W2</span>
+      <span class="hbadge yes">✅ Contract / FT</span>
       <span class="hbadge yes">✅ H1B til Jul'27</span>
       <span class="hbadge yes">✅ $150K+ Target</span>
     </div>
@@ -184,16 +184,17 @@ select.sort-sel option{background:#0a1628}
       <div style="display:flex;gap:6px;margin-bottom:12px">
         <button id="mode-de" onclick="setMode('de')" style="flex:1;padding:9px;border-radius:9px;border:2px solid #06b6d4;background:rgba(6,182,212,.15);color:#06b6d4;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit">🗄️ Data Engineer</button>
         <button id="mode-ai" onclick="setMode('ai')" style="flex:1;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.08);background:transparent;color:#475569;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit">🤖 AI Data Engineer</button>
+        <button id="mode-ct" onclick="setMode('ct')" style="flex:1;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.08);background:transparent;color:#475569;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit">📋 Contract / W2</button>
       </div>
       <div id="mode-desc" style="font-size:10px;color:#475569;font-family:'Space Mono';margin-bottom:12px;padding:5px 10px;background:rgba(6,182,212,.04);border-radius:6px;border-left:2px solid #06b6d4">
-        Databricks · PySpark · Delta Lake · Delta Live Tables · Unity Catalog · ADF · Kafka · dbt · Snowflake
+        On-site · Hybrid · Remote · Dallas · Plano · Frisco · Irving · Richardson · Addison · Carrollton · McKinney · Allen
       </div>
       <div class="search-grid">
         <div><div class="field-label">ROLE</div><div class="field-val" id="role-display">🗄️ Data Engineer (Databricks / Spark / Snowflake)</div></div>
-        <div><div class="field-label">LOCATION</div><div class="field-val">📍 75234 Dallas + Remote</div></div>
-        <div><div class="field-label">TYPE</div><div class="field-val">✅ Full-Time Permanent</div></div>
+        <div><div class="field-label">LOCATION</div><div class="field-val">📍 Dallas / DFW Metro + Remote + Hybrid + On-site</div></div>
+        <div><div class="field-label">TYPE</div><div class="field-val" id="type-display">✅ Full-Time · On-site / Hybrid / Remote</div></div>
         <div><div class="field-label">VISA</div><div class="field-val">🛂 H1B Sponsorship</div></div>
-        <button class="search-btn" id="search-btn" onclick="runSearch()">🔍 Find Jobs</button>
+        <button class="search-btn" id="search-btn" onclick="runSearch(false)">⚡ Find Jobs</button>
       </div>
       <div class="scan-status" id="scan-status" style="display:none">
         <span id="scan-icon">💼</span>
@@ -232,7 +233,13 @@ select.sort-sel option{background:#0a1628}
       <h2 style="font-size:17px;font-weight:600;color:#5a7a9e;margin-bottom:6px">Full-Time AI Data Engineer Jobs · H1B Safe</h2>
       <p style="color:#1e3a5f;font-size:11.5px;margin-bottom:4px">Permanent hire only · No W2/contract · Dallas 75234 + Remote</p>
       <p style="color:#0d2137;font-size:10px;margin-bottom:22px;font-family:'Space Mono'">Jobs appear live as found · Recent first · Direct apply links</p>
-      <button class="search-btn" style="margin:0 auto" onclick="runSearch()">🔍 Start Job Search</button>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+        <button class="search-btn" style="margin:0 auto" onclick="runSearch(false)">⚡ Find Jobs</button>
+        <div style="display:flex;gap:20px">
+          <button onclick="runSearch(true)" style="font-size:11px;color:#06b6d4;background:none;border:none;cursor:pointer;font-family:'Space Mono'">🔄 Force Refresh</button>
+          <button onclick="clearAllCache();runSearch(true)" style="font-size:11px;color:#475569;background:none;border:none;cursor:pointer;font-family:'Space Mono'">🗑️ Clear Cache</button>
+        </div>
+      </div>
     </div>
     <!-- Setup instructions (shown until both key+proxy saved) -->
     <div id="setup-guide" style="background:#070e1c;border:1px solid rgba(167,139,250,.2);border-radius:14px;padding:20px 24px;margin-top:16px">
@@ -872,6 +879,10 @@ function renderCard(job, idx, context) {
           <span class="job-title">${job.title||''}</span>
           <span class="badge" style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:#34d399">✅ Full-Time</span>
           ${job.databricksFirst?'<span class="badge" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b;font-weight:800">⚡ Databricks</span>':''}
+          ${job.contractType?`<span class="badge" style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:#34d399">📋 ${job.contractType}</span>`:''}
+          ${job.duration?`<span class="badge" style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);color:#a78bfa">⏱ ${job.duration}</span>`:''}
+          ${job.hasEquity?`<span class="badge" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);color:#fbbf24">💰 Equity</span>`:''}
+          ${job.source==='X.com'||job.source==='𝕏 X.com'?`<span class="badge" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0">𝕏 X.com</span>`:''}
           ${job.remote?'<span class="badge" style="background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.25);color:#06b6d4">🌐 REMOTE</span>':''}
           ${job.seniorityLevel&&job.seniorityLevel!=='Mid'?`<span class="badge" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);color:#a78bfa">${job.seniorityLevel}</span>`:''}
         </div>
@@ -908,6 +919,35 @@ function toggleBenefits(key, btn) {
 
 // ── SEARCH ─────────────────────────────────────────────────────────────────────
 let currentMode = 'de';
+const CACHE_TTL = 3 * 60 * 60 * 1000; // 3 hours
+
+function getCacheKey(mode){ return 'jr_jobs_'+mode; }
+function getCache(mode){
+  try{
+    const raw = localStorage.getItem(getCacheKey(mode));
+    if(!raw) return null;
+    const {jobs,ts} = JSON.parse(raw);
+    if(Date.now()-ts > CACHE_TTL) return null; // expired
+    return jobs;
+  }catch(e){ return null; }
+}
+function setCache(mode, jobs){
+  try{
+    localStorage.setItem(getCacheKey(mode), JSON.stringify({jobs, ts:Date.now()}));
+  }catch(e){}
+}
+function getCacheAge(mode){
+  try{
+    const raw = localStorage.getItem(getCacheKey(mode));
+    if(!raw) return null;
+    const {ts} = JSON.parse(raw);
+    const mins = Math.round((Date.now()-ts)/60000);
+    return mins < 60 ? mins+'m ago' : Math.round(mins/60)+'h ago';
+  }catch(e){ return null; }
+}
+function clearAllCache(){
+  ['de','ai','ct'].forEach(m=>localStorage.removeItem(getCacheKey(m)));
+}
 
 const PROMPTS = {
 de: `You are a job search expert for H1B visa holders. Generate 20-24 realistic FULL-TIME permanent Data Engineer job listings for Dallas TX / Remote 2025 market.
@@ -931,9 +971,9 @@ ALL jobs rules: Full-Time permanent only. H1B sponsorship open. No citizenship/c
 applyUrl = https://www.linkedin.com/jobs/search/?keywords=databricks+data+engineer+[company]&location=Dallas+TX&f_JT=F
 
 Return ONLY raw JSON array — Section 1 jobs first, then Section 2 jobs.
-Each object: {"id":number,"title":"string","company":"string","location":"string","salary":"$XK-$YK/yr","postedRaw":"X days ago","postedScore":number,"sponsorship":"H1B Sponsored","applyUrl":"string","tags":["Databricks","PySpark","Delta Lake","Azure","dbt"],"source":"LinkedIn","remote":bool,"benefits":["Health Insurance","401k Match","PTO","Dental","Vision"],"aiSkills":[],"seniorityLevel":"Senior/Lead/Staff/Principal","companySize":"Startup/Mid-size/Enterprise","databricksFirst":bool}`,
+Each object: {"id":number,"title":"string","company":"string","location":"string","salary":"$XK-$YK/yr","postedRaw":"X days ago","postedScore":number,"sponsorship":"H1B Sponsored","applyUrl":"string","tags":["Databricks","PySpark","Delta Lake","Azure","dbt"],"source":"LinkedIn","remote":bool,"benefits":["Health Insurance","401k Match","PTO","Dental","Vision"],"aiSkills":[],"seniorityLevel":"Senior/Lead/Staff/Principal","companySize":"Startup/Mid-size/Enterprise","databricksFirst":bool,"hasEquity":false}`,
 
-ai: `You are a job search expert for H1B visa holders. Generate 18-22 realistic FULL-TIME permanent AI Data Engineer / ML Data Engineer job listings for Dallas TX / Remote 2025 market.
+ai: `You are a job search expert for H1B visa holders. Generate 18-22 realistic FULL-TIME permanent AI Data Engineer / ML Data Engineer job listings for the Dallas/DFW Metro area and Remote 2025 market.
 
 PRIMARY REQUIREMENT: Every job MUST use Databricks AI or Databricks as the core AI/ML platform. This is non-negotiable.
 
@@ -952,6 +992,34 @@ Rules: Full-Time permanent only. H1B sponsorship open. No citizenship/clearance.
 applyUrl = https://www.linkedin.com/jobs/search/?keywords=databricks+AI+data+engineer+[company]&location=Dallas+TX&f_JT=F
 
 Return ONLY raw JSON array. Each: {"id":number,"title":"string","company":"string","location":"string","salary":"$XK-$YK/yr","postedRaw":"X days ago","postedScore":number,"sponsorship":"H1B Sponsored","applyUrl":"string","tags":["Databricks","MLflow","PySpark","Delta Lake","Azure OpenAI"],"source":"LinkedIn","remote":bool,"benefits":["Health Insurance","401k Match","PTO","Dental","Vision","Equity/RSU"],"aiSkills":["Databricks AI","MLflow","RAG","LLM"],"seniorityLevel":"Senior/Lead/Staff/Principal","companySize":"Startup/Mid-size/Enterprise"}`
+,
+
+ct: `You are a job search expert for H1B visa holders. Generate 18-22 realistic CONTRACT / W2 Data Engineer job listings for the Dallas/DFW Metro area and Remote 2025 market.
+
+Focus ONLY on contract positions — W2 contract, Contract-to-Hire (C2H), long-term contract (6+ months). NO full-time permanent. NO C2C unless explicitly stated.
+
+IMPORTANT: All positions must be H1B-friendly — W2 through staffing/consulting firm means H1B can transfer. EXCLUDE any role requiring US Citizenship, Green Card Only, or Security Clearance.
+
+TARGET CONTRACT TYPES:
+- W2 Contract through staffing firms: Cognizant, TCS, Infosys, Wipro, HCL, Tech Mahindra, Capgemini, LTIMindtree, Mastech, Apex Systems, Randstad, Robert Half, TEKsystems, Kforce, Insight Global
+- Contract-to-Hire (C2H) at: AT&T, JPMorgan Chase (Plano), Humana, UnitedHealth, McKesson, Celanese, Toyota Connected, Capital One, Deloitte, Accenture
+- Long-term contracts (12-24 months) at healthcare, financial, and enterprise companies in Dallas area and remote
+- Contract roles posted on: Dice, LinkedIn (contract filter), Indeed, Corp-to-Corp boards
+
+SKILLS TO TARGET (Databricks primary, others secondary):
+Databricks, PySpark, Delta Lake, Azure Data Factory, Azure Synapse, Snowflake, dbt, Apache Kafka, Apache Airflow, AWS Glue, AWS EMR, Python, SQL
+
+RATE/SALARY RANGE:
+- W2 hourly: $65-95/hr ($130K-$190K annualized)
+- Contract-to-Hire: $70-100/hr
+- Include both hourly rates AND annual equivalent where possible
+
+Include jobs in: Dallas TX, Plano TX, Frisco TX, Irving TX, Richardson TX, Addison TX, Carrollton TX, McKinney TX, Allen TX, Arlington TX, Fort Worth TX, and Remote. On-site/Hybrid/Remote all acceptable.
+For applyUrl use: https://www.dice.com/jobs?q=databricks+data+engineer+contract&location=Dallas-Fort+Worth+TX&employmentType=CONTRACTS
+OR: https://www.linkedin.com/jobs/search/?keywords=databricks+data+engineer+contract&location=Dallas-Fort+Worth+TX&f_JT=C&f_TPR=r2592000
+
+Return ONLY raw JSON array. Each object MUST have:
+{"id":number,"title":"string","company":"string","location":"string","salary":"$XX/hr W2 ($XXXk/yr equiv)","hourlyRate":"$XX-$XX/hr W2","postedRaw":"X days ago","postedScore":number,"sponsorship":"H1B W2 Transfer","contractType":"W2 Contract / C2H / Long-term Contract","duration":"6 months / 12 months / 18 months / C2H","applyUrl":"https://www.dice.com/jobs?q=[title]+[company]&location=Dallas+TX&employmentType=CONTRACTS OR https://www.linkedin.com/jobs/search/?keywords=[title]+[company]+contract&location=Dallas-Fort+Worth+TX&f_JT=C","tags":["Databricks","PySpark","Delta Lake","Python","SQL"],"source":"Dice","remote":bool,"benefits":["Health Insurance (W2)","Dental","Vision"],"aiSkills":[],"seniorityLevel":"Senior/Lead","companySize":"Startup/Mid-size/Enterprise","databricksFirst":bool,"hasEquity":false}`
 };
 
 function setMode(mode) {
@@ -964,12 +1032,20 @@ function setMode(mode) {
     deBtn.style.cssText='flex:1;padding:9px;border-radius:9px;border:2px solid #06b6d4;background:rgba(6,182,212,.15);color:#06b6d4;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit';
     aiBtn.style.cssText='flex:1;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.08);background:transparent;color:#475569;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit';
     if(desc){desc.style.borderLeftColor='#06b6d4';desc.textContent='Databricks · PySpark · Delta Lake · Snowflake · dbt · Iceberg · Hudi · Kafka · Airflow · ADF · BigQuery';}
-    if(role) role.textContent='🗄️ Data Engineer (Databricks / Spark / Snowflake)';
+    if(role) role.textContent='🗄️ Data Engineer — DFW Metro + Remote + Hybrid';
   } else {
     aiBtn.style.cssText='flex:1;padding:9px;border-radius:9px;border:2px solid #a78bfa;background:rgba(167,139,250,.15);color:#a78bfa;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit';
     deBtn.style.cssText='flex:1;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.08);background:transparent;color:#475569;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit';
-    if(desc){desc.style.borderLeftColor='#a78bfa';desc.textContent='Databricks AI · Mosaic AI · MLflow · Feature Store · Vector Search · Delta Lake + LLM · RAG · Azure OpenAI';}
-    if(role) role.textContent='🤖 AI Data Engineer (Databricks AI / Mosaic AI / MLflow)';
+    if(desc){desc.style.borderLeftColor='#a78bfa';desc.textContent='Skill-based search — MLflow · LLM · RAG · Vector DB · catches ML Engineer, Platform Engineer, Staff Engineer roles · X.com startup equity roles · LinkedIn · Wellfound · YC Jobs';}
+    if(role) role.textContent='🤖 AI Data Engineer — DFW Metro + Remote + Hybrid';
+  }
+  if (mode === 'ct') {
+    document.getElementById('mode-ct').style.cssText='flex:1;padding:9px;border-radius:9px;border:2px solid #34d399;background:rgba(52,211,153,.15);color:#34d399;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit';
+    document.getElementById('mode-de').style.cssText='flex:1;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.08);background:transparent;color:#475569;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit';
+    document.getElementById('mode-ai').style.cssText='flex:1;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.08);background:transparent;color:#475569;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit';
+    if(desc){desc.style.borderLeftColor='#34d399';desc.textContent='Contract skill-based search — Databricks · PySpark · W2/C2H/C2C · TEKsystems · Apex · Kforce · Dice · X.com contract posts · DFW Metro + Remote · $65-100/hr';}
+    if(role) role.textContent='📋 Contract / W2 — DFW Metro + Remote + Hybrid · $65-100/hr';
+    const td=document.getElementById('type-display'); if(td) td.textContent='📋 Contract / C2H · On-site / Hybrid / Remote';
   }
   allJobs=[];
   document.getElementById('job-list').innerHTML='';
@@ -977,6 +1053,10 @@ function setMode(mode) {
   document.getElementById('filters-row').style.display='none';
   document.getElementById('search-empty').style.display='none';
   document.getElementById('search-hero').style.display='block';
+  const oldCacheBar = document.getElementById('cache-bar');
+  if(oldCacheBar) oldCacheBar.style.display='none';
+  // Auto-load from cache for this mode
+  setTimeout(()=>{ if(localStorage.getItem('jr_api_key')){ const cached=getCache(mode); if(cached&&cached.length) runSearch(false); } }, 100);
 }
 
 async function runSearch() {
@@ -1007,19 +1087,26 @@ async function runSearch() {
     if (!apiKey) { throw new Error('Please enter your Anthropic API key in the yellow bar above.'); }
     const proxyUrl = localStorage.getItem('jr_proxy')||'';
     if (!proxyUrl) throw new Error('Please enter your Proxy URL in the bar above.');
-    const userMsg = currentMode==='de'
-      ? 'Generate 18-22 full-time H1B-friendly Data Engineer jobs for Dallas TX / Remote 2025. Focus on Databricks, PySpark, Snowflake, dbt, Delta Lake, Iceberg, Kafka, ADF, BigQuery. Healthcare, finance, Dallas-area, consulting, Big Tech mix. Return only JSON array.'
-      : 'Generate 18-22 full-time H1B-friendly AI Data Engineer jobs for Dallas TX / Remote 2025. Focus on LLM pipelines, MLOps, RAG, Vector DB, Databricks AI, Azure OpenAI, Feature Stores. AI platforms, healthcare AI, funded startups mix. Return only JSON array.';
+    const userMsg =
+      currentMode==='de' ? 'Search LinkedIn (site:linkedin.com/jobs), Dice (site:dice.com), Wellfound (site:wellfound.com), X.com (site:x.com), and company ATS pages for REAL LIVE job postings. Search by SKILLS not title — many companies title roles as Software Engineer, Platform Engineer, Backend Engineer, Analytics Engineer, Staff Engineer, Engineer II/III but the responsibilities are data engineering. Search 1: databricks pyspark delta lake site:linkedin.com/jobs remote dallas H1B 2025. Search 2: spark etl pipeline python sql site:linkedin.com/jobs texas remote H1B sponsor. Search 3: hiring databricks pyspark remote equity site:x.com. Search 4: databricks pyspark site:wellfound.com equity remote H1B. Search 5: databricks data engineer site:boards.greenhouse.io OR site:jobs.lever.co dallas remote. Full-time permanent, H1B friendly, on-site hybrid remote, DFW metro plus remote. Return JSON array with real applyUrl links and hasEquity field.'
+      : currentMode==='ai' ? 'Generate 12-15 realistic full-time H1B-friendly AI Data Engineer job listings for Dallas/DFW Metro and Remote 2025. IMPORTANT: Include roles titled ML Engineer, MLOps Engineer, Platform Engineer, Staff Engineer, Backend Engineer, Research Engineer, Engineer II/III where responsibilities involve ML data pipelines, LLM infra, or Databricks AI. Focus on skills: MLflow, Databricks AI, LLM pipelines, RAG, Vector DB, Azure OpenAI, Spark ML, Feature Store. Include startups on Wellfound and X.com posting with equity. For applyUrl use specific LinkedIn: https://www.linkedin.com/jobs/search/?keywords=[title]+[company]&location=Dallas-Fort+Worth+TX&f_JT=F or Wellfound: https://wellfound.com/jobs/[company] or company ATS. Set hasEquity:true for startups offering RSU/options. Return JSON array.'
+      : 'Generate 12-15 realistic H1B-friendly Contract/W2 Data Engineer job listings for Dallas/DFW Metro and Remote 2025. Include roles titled Software Engineer contract, Platform Engineer W2, Engineer II contract, Backend Engineer C2H where responsibilities involve Databricks/PySpark/ETL. Mix of: W2 Contract via staffing firms (Cognizant, TCS, Infosys, Wipro, HCL, Apex Systems, TEKsystems, Randstad, Kforce, Robert Half) and Contract-to-Hire at enterprise companies (AT&T, JPMorgan Plano, Humana, Capital One, Toyota Connected, Celanese, Deloitte, Accenture). For applyUrl use Dice: https://www.dice.com/jobs?q=databricks+pyspark+contract&location=Dallas+TX&employmentType=CONTRACTS or LinkedIn: https://www.linkedin.com/jobs/search/?keywords=databricks+pyspark+contract+[company]&location=Dallas-Fort+Worth+TX&f_JT=C . Include hourlyRate $65-100/hr W2. Set contractType, duration, hourlyRate in every result. Return JSON array.'
     const res = await fetch(proxyUrl, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({apiKey:apiKey,model:'claude-sonnet-4-6',max_tokens:8000,system:PROMPTS[currentMode],messages:[{role:'user',content:userMsg}]})
+      body: JSON.stringify({apiKey:apiKey,model:'claude-haiku-4-5-20251001',max_tokens:6000,system:PROMPTS[currentMode],messages:[{role:'user',content:userMsg}]})
     });
     if (!res.ok) { const t=await res.text(); throw new Error('Error '+res.status+': '+t.slice(0,200)); }
     const data = await res.json();
     const raw = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
     const m = raw.match(/\[[\s\S]*\]/);
-    if (m) { try { const a=JSON.parse(m[0]); if(Array.isArray(a)&&a.length) { allJobs=a.sort((a,b)=>(a.postedScore||30)-(b.postedScore||30)); renderJobList(); document.getElementById('scan-count').style.display='inline'; document.getElementById('scan-count').textContent=allJobs.length+' found'; } } catch(e2) { throw new Error('Parse error: '+e2.message); } }
+    if (m) { try { const a=JSON.parse(m[0]); if(Array.isArray(a)&&a.length) {
+      allJobs=a.sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
+      setCache(currentMode, allJobs); // save to cache
+      renderJobList();
+      document.getElementById('scan-count').style.display='inline';
+      document.getElementById('scan-count').textContent=allJobs.length+' found';
+    } } catch(e2) { throw new Error('Parse error: '+e2.message); } }
     if (!allJobs.length) throw new Error('No jobs returned — please try again.');
   } catch(e) {
     document.getElementById('search-error').textContent = '⚠️ '+e.message;
@@ -1029,7 +1116,7 @@ async function runSearch() {
   endProgress();
   document.getElementById('scan-status').style.display = 'none';
   document.getElementById('search-btn').disabled = false;
-  document.getElementById('search-btn').innerHTML = '🔍 Find Jobs';
+  document.getElementById('search-btn').innerHTML = '⚡ Find Jobs';
   if (!allJobs.length) document.getElementById('search-empty').style.display = 'block';
 }
 
@@ -1404,17 +1491,25 @@ function updateStatus() {
 }
 // Restore saved values on load
 (function() {
-  // Hardcoded proxy URL — no need to enter on any device
+  // Hardcoded proxy URL
   const PROXY = 'https://shrill-hat-ec23.bnikhil545.workers.dev';
-  if (!localStorage.getItem('jr_proxy')) {
-    localStorage.setItem('jr_proxy', PROXY);
-  }
+  if (!localStorage.getItem('jr_proxy')) localStorage.setItem('jr_proxy', PROXY);
   const key = localStorage.getItem('jr_api_key');
   const proxy = localStorage.getItem('jr_proxy') || PROXY;
   if (key) document.getElementById('api-key-input').value = key;
   const proxyEl = document.getElementById('proxy-url-input');
   if (proxyEl) proxyEl.value = proxy;
   updateStatus();
+
+  // Auto-load from cache on page open
+  setTimeout(()=>{
+    if(localStorage.getItem('jr_api_key')){
+      const cached = getCache(currentMode);
+      if(cached && cached.length){
+        runSearch(false); // load from cache instantly
+      }
+    }
+  }, 300);
 })();
 updateCounts();
 </script>
