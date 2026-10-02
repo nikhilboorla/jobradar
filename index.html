@@ -307,6 +307,7 @@ a{text-decoration:none}
   #logo{width:auto}
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/html-docx-js/dist/html-docx.js"></script>
 </head>
 <body>
 
@@ -485,669 +486,81 @@ a{text-decoration:none}
   </main>
 </div>
 
-<div id="toast">✅ Copied</div>
+<div id="toast">✅ Done</div>
+
+<!-- Tailor drawer -->
+<div id="tailor-overlay" onclick="closeTailor()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;backdrop-filter:blur(4px)"></div>
+<div id="tailor-drawer" style="display:none;position:fixed;right:0;top:0;bottom:0;width:min(520px,100%);background:#141417;border-left:1px solid #27272a;z-index:201;overflow-y:auto;padding:24px;flex-direction:column;gap:16px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+    <div>
+      <div style="font-size:18px;font-weight:800;color:#fafafa;letter-spacing:-.3px">✨ Resume Tailor</div>
+      <div style="font-size:12px;color:#71717a" id="tailor-job-meta">Loading…</div>
+    </div>
+    <button onclick="closeTailor()" style="background:none;border:none;color:#71717a;font-size:20px;cursor:pointer">✕</button>
+  </div>
+  <!-- Status -->
+  <div id="tailor-status-block" style="background:#0a0a0a;border:1px solid #27272a;border-radius:10px;padding:14px">
+    <div style="font-size:10px;color:#71717a;font-weight:700;letter-spacing:.5px;margin-bottom:10px">APPLICATION STATUS</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap" id="status-btns"></div>
+  </div>
+  <!-- JD input -->
+  <div>
+    <div style="font-size:10px;color:#22d3ee;font-weight:700;letter-spacing:.5px;margin-bottom:6px">JOB DESCRIPTION (optional — add for better tailoring)</div>
+    <textarea id="tailor-jd" rows="6" placeholder="Paste the full job description here for best results…" style="width:100%;background:#0a0a0a;border:1px solid #27272a;border-radius:9px;color:#fafafa;font-size:12px;padding:12px;resize:vertical;outline:none;font-family:inherit"></textarea>
+  </div>
+  <!-- Generate button -->
+  <button id="gen-btn" onclick="generateTailored()" style="width:100%;padding:12px;border-radius:10px;border:none;background:#fafafa;color:#09090b;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">✨ Generate Tailored Resume</button>
+  <!-- Progress -->
+  <div id="tailor-progress" style="display:none;text-align:center;padding:20px">
+    <div style="width:32px;height:32px;border:2px solid #27272a;border-top-color:#22d3ee;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px"></div>
+    <div style="font-size:12px;color:#71717a" id="tailor-step">Analyzing job description…</div>
+  </div>
+  <!-- Result -->
+  <div id="tailor-result" style="display:none">
+    <div style="font-size:10px;color:#4ade80;font-weight:700;letter-spacing:.5px;margin-bottom:10px">✅ TAILORED RESUME READY</div>
+    <!-- ATS Score -->
+    <div style="background:#0a0a0a;border:1px solid #27272a;border-radius:10px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:14px">
+      <div id="tr-ats" style="font-size:36px;font-weight:900"></div>
+      <div><div id="tr-ats-label" style="font-size:13px;font-weight:700"></div><div style="font-size:11px;color:#71717a">ATS keyword match</div></div>
+    </div>
+    <!-- Keywords -->
+    <div style="margin-bottom:10px">
+      <div style="font-size:10px;color:#71717a;font-weight:600;margin-bottom:6px">MATCHED KEYWORDS</div>
+      <div id="tr-kw-match" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;color:#f87171;font-weight:600;margin-bottom:6px">ADD THESE TO YOUR RESUME</div>
+      <div id="tr-kw-miss" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+    </div>
+    <!-- Download -->
+    <button id="dl-btn" onclick="downloadDocx()" style="width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#22d3ee,#0284c7);color:#fff;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px">⬇️ Download Tailored .docx</button>
+    <button onclick="copyTailored()" style="width:100%;padding:10px;border-radius:10px;border:1px solid #27272a;background:none;color:#71717a;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📋 Copy Resume Text</button>
+  </div>
+</div>
+
+<div id="err-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#991b1b;color:#fecaca;font-size:12px;padding:10px 16px;z-index:999;font-family:monospace"></div>
 
 <script>
 
-// ── STATE ──────────────────────────────────────────────────────────────────────
-let allJobs = [];
-let savedJobs = JSON.parse(localStorage.getItem('jr_saved')||'[]');
-let appJobs   = JSON.parse(localStorage.getItem('jr_apps')||'[]');
-let remoteFilter = 'all';
-let sortMode = 'recent';
-let expandedBenefits = new Set();
-let progressTimer, scanTimer, progressVal = 0;
-
-const SCAN_STEPS = [
-  {src:'LinkedIn',icon:'💼'},{src:'Indeed',icon:'🔍'},{src:'Dice',icon:'🎲'},
-  {src:'Glassdoor',icon:'🚪'},{src:'ZipRecruiter',icon:'⚡'},{src:'Builtin',icon:'🏗️'},
-  {src:'Monster',icon:'👾'},{src:'SimplyHired',icon:'📋'},{src:'Wellfound',icon:'🚀'},
-];
-const AI_COLORS = {LLM:'#a78bfa',RAG:'#f472b6',MLOps:'#34d399',GenAI:'#fb923c','Vector DB':'#60a5fa',Embeddings:'#facc15',NLP:'#4ade80',Databricks:'#f59e0b',PySpark:'#8b5cf6','Azure OpenAI':'#38bdf8',SageMaker:'#fb923c',Airflow:'#14b8a6',Kafka:'#ec4899'};
-const TAG_COLORS = {Python:'#3b82f6',PySpark:'#8b5cf6',Databricks:'#f59e0b',SQL:'#10b981',AWS:'#f97316',Azure:'#0ea5e9',GCP:'#34d399',Spark:'#a855f7',Kafka:'#ec4899',dbt:'#6366f1',Airflow:'#14b8a6',ML:'#f43f5e',AI:'#06b6d4',LLM:'#a78bfa',RAG:'#f472b6',MLOps:'#34d399','Delta Lake':'#60a5fa',Snowflake:'#38bdf8'};
-const BENEFIT_ICONS = {Health:'🏥',Dental:'🦷',Vision:'👁️','401k':'💰',PTO:'🏖️',Unlimited:'🏖️',Remote:'🏠',Hybrid:'🏠',Equity:'📈',RSU:'📈','Sign-on':'🎁',Bonus:'🎁',Parental:'👶',Tuition:'🎓',Gym:'💪',Wellness:'🧘'};
-const STATUS_CONFIG = {
-  'Applied':      {color:'#a78bfa',emoji:'📤'},
-  'Phone Screen': {color:'#fbbf24',emoji:'📞'},
-  'Tech Round':   {color:'#f97316',emoji:'💻'},
-  'Final Round':  {color:'#ec4899',emoji:'🎯'},
-  'Offer':        {color:'#34d399',emoji:'🎉'},
-  'Rejected':     {color:'#f87171',emoji:'❌'},
-  'Ghosted':      {color:'#475569',emoji:'👻'},
-};
-
-// ── HELPERS ────────────────────────────────────────────────────────────────────
-function gc(tag, map) {
-  for (const [k,v] of Object.entries(map)) if (tag && tag.includes(k)) return v;
-  return '#475569';
-}
-function gbi(b) {
-  for (const [k,v] of Object.entries(BENEFIT_ICONS)) if (b && b.includes(k)) return v;
-  return '✨';
-}
-function buildUrl(job) {
-  const raw = (job.applyUrl||'').trim();
-  const slug = (job.company||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-  // Accept company LinkedIn pages, Lever, Greenhouse, Wellfound, direct ATS career pages
-  const good = raw && raw !== 'null' && raw !== '#'
-    && (raw.includes('linkedin.com/company/')
-        || raw.includes('/jobs/view/') || raw.includes('lever.co')
-        || raw.includes('greenhouse.io') || raw.includes('dice.com/job-detail')
-        || raw.includes('wellfound.com/jobs') || raw.includes('careers.')
-        || raw.includes('/careers/') || raw.includes('ycombinator.com/companies'));
-  if (good) return raw;
-  // Fallback: company LinkedIn jobs page (always works)
-  return `https://www.linkedin.com/company/${slug}/jobs/`;
-}
-function googleUrl(job) {
-  const q = encodeURIComponent('"'+job.title+'" "'+job.company+'" jobs Dallas remote');
-  return `https://www.google.com/search?q=${q}&ibp=htl;jobs`;
-}
-
-function extractJobs(buf) {
-  const jobs=[]; let d=0,s=-1;
-  for(let i=0;i<buf.length;i++){
-    if(buf[i]==='{'){if(d===0)s=i;d++;}
-    else if(buf[i]==='}'){d--;if(d===0&&s!==-1){
-      try{const o=JSON.parse(buf.slice(s,i+1));if(o.title&&o.company)jobs.push(o);}catch{}
-      s=-1;
-    }}
-  }
-  return jobs;
-}
-function saveLS(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
-function updateCounts() {
-  document.getElementById('saved-count').textContent = savedJobs.length;
-  document.getElementById('app-count').textContent = appJobs.length;
-}
-
-// ── TAB SWITCHING ──────────────────────────────────────────────────────────────
-function switchTab(id) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-'+id).classList.add('active');
-  const btns = document.querySelectorAll('.nav-btn');
-  const map = {search:0,saved:1,tracker:2,salary:3,companies:4,boards:5};
-  btns[map[id]].classList.add('active');
-  if (id==='saved') renderSaved();
-  if (id==='tracker') renderTracker();
-  if (id==='companies') renderCompanies();
-}
-
-// ── PROGRESS BAR ──────────────────────────────────────────────────────────────
-function startProgress() {
-  progressVal = 0;
-  document.getElementById('progress-bar').style.display = 'block';
-  document.getElementById('progress-fill').style.width = '0%';
-  progressTimer = setInterval(() => {
-    progressVal = Math.min(progressVal + Math.random()*4, 88);
-    document.getElementById('progress-fill').style.width = progressVal + '%';
-  }, 300);
-}
-function endProgress() {
-  clearInterval(progressTimer);
-  document.getElementById('progress-fill').style.width = '100%';
-  setTimeout(() => document.getElementById('progress-bar').style.display = 'none', 600);
-}
-
-// ── RENDER JOB CARD ───────────────────────────────────────────────────────────
-function renderCard(job, idx, context) {
-  const id = String(job.id || job.title+job.company);
-  const isSaved = savedJobs.some(j => String(j.id||j.title+j.company) === id);
-  const isTracked = appJobs.some(j => String(j.id||j.title+j.company) === id);
-  const expandKey = context+'_'+idx;
-
-  const aiTagsHtml = (job.aiSkills||[]).map(s =>
-    `<span class="ai-tag" style="background:${gc(s,AI_COLORS)}15;border:1px solid ${gc(s,AI_COLORS)}30;color:${gc(s,AI_COLORS)}">⚡ ${s}</span>`
-  ).join('');
-
-  const techTagsHtml = (job.tags||[]).map(t =>
-    `<span class="tech-tag" style="background:${gc(t,TAG_COLORS)}10;border:1px solid ${gc(t,TAG_COLORS)}25;color:${gc(t,TAG_COLORS)}">${t}</span>`
-  ).join('');
-
-  const benefitsHtml = (job.benefits||[]).length > 0 ? `
-    <button class="benefits-toggle" onclick="toggleBenefits('${expandKey}',this)">
-      ⭐ Benefits & Perks (${job.benefits.length}) <span>▾</span>
-    </button>
-    <div class="benefits-list" id="ben-${expandKey}" style="display:none">
-      ${job.benefits.map(b=>`<span class="benefit-chip">${gbi(b)} ${b}</span>`).join('')}
-    </div>` : '';
-
-  const notesHtml = context === 'saved' ? `<textarea class="notes-area" placeholder="Add notes (interview date, contact name, follow-up...)" onchange="saveNote('${id}',this.value)">${job.notes||''}</textarea>` : '';
-
-  const rightBtns = context === 'search' ? `
-    <button class="save-btn ${isSaved?'active':''}" onclick="toggleSave(${JSON.stringify(JSON.stringify(job))})">
-      ${isSaved ? '🔖 Saved' : '+ Save'}
-    </button>
-    <button class="track-btn" onclick="trackJob(${JSON.stringify(JSON.stringify(job))})">+ Track</button>
-  ` : context === 'saved' ? `
-    <button class="track-btn" onclick="trackJob(${JSON.stringify(JSON.stringify(job))})">+ Track App</button>
-    <button class="remove-btn" onclick="removeSaved('${id}')">Remove</button>
-  ` : '';
-
-  return `
-  <div class="job-card ${context==='saved'?'saved-card':''} fade" style="animation-delay:${idx*.04}s">
-    <div class="card-inner">
-      <div class="card-left">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
-          <span class="job-title">${job.title||''}</span>
-          <span class="badge" style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:#34d399">✅ Full-Time</span>
-          ${job.databricksFirst?'<span class="badge" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b;font-weight:800">⚡ Databricks</span>':''}
-          ${job.contractType?`<span class="badge" style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:#34d399">🤝 ${job.contractType}</span>`:''}${job.hourlyRate?`<span style="font-size:11px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);padding:2px 8px;border-radius:6px;margin-left:4px">⏱ ${job.hourlyRate}</span>`:''}${job.hasEquity?`<span class="badge" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);color:#fbbf24">💰 Equity</span>`:''}
-          ${job.source==='X.com'||job.source==='𝕏 X.com'?`<span class="badge" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0">𝕏 X.com</span>`:''}
-          ${job.remote?'<span class="badge" style="background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.25);color:#06b6d4">🌐 REMOTE</span>':''}
-          ${job.seniorityLevel&&job.seniorityLevel!=='Mid'?`<span class="badge" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);color:#a78bfa">${job.seniorityLevel}</span>`:''}
-        </div>
-        <div class="job-company">🏢 ${job.company||''}</div>
-        <div class="job-meta">
-          <span>📍 ${job.location||''}</span>
-          <span class="${job.salary&&job.salary!=='Not Listed'?'salary':''}">💰 ${job.salary||'Not Listed'}</span>
-          <span>🕐 ${job.postedRaw||'Recently'}</span>
-          <span style="color:#112240;font-family:'Space Mono';font-size:9.5px">via ${job.source||''}</span>
-        </div>
-        ${aiTagsHtml ? `<div class="tags-row" style="margin-bottom:6px"><span style="font-size:9px;color:#1e3a5f;font-family:'Space Mono';margin-right:3px">AI:</span>${aiTagsHtml}</div>` : ''}
-        <div class="tags-row">${techTagsHtml}</div>
-        ${benefitsHtml}
-        ${notesHtml}
-      </div>
-      <div class="card-right">
-        <a href="${buildUrl(job)}" target="_blank" class="apply-btn">
-          🚀 LinkedIn Jobs
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        </a>
-        <a href="${googleUrl(job)}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#94a3b8;text-decoration:none;padding:7px 11px;border-radius:9px;font-size:12px;font-weight:600;font-family:inherit;margin-top:6px">
-          🔍 Google Jobs
-        </a>
-        ${rightBtns}
-        <span class="h1b-note">🛡️ H1B eligible</span>
-      </div>
-    </div>
-  </div>`;
-}
-
-function toggleBenefits(key, btn) {
-  const el = document.getElementById('ben-'+key);
-  const open = el.style.display === 'flex';
-  el.style.display = open ? 'none' : 'flex';
-  btn.querySelector('span').textContent = open ? '▾' : '▴';
-}
-
-// ── SEARCH ─────────────────────────────────────────────────────────────────────
-let currentMode = 'de';
+// ── Constants ─────────────────────────────────────────────────────────────
+const PROXY = 'https://shrill-hat-ec23.bnikhil545.workers.dev';
+const DFW_CITIES = 'Dallas, Fort Worth, Westlake, Plano, Frisco, Irving, Richardson, Addison, Carrollton, McKinney, Allen, Arlington, Southlake, Grapevine, Lewisville, Flower Mound, Denton, Grand Prairie, Mansfield, Keller, Coppell, The Colony, Garland';
 const CACHE_TTL = 3 * 60 * 60 * 1000; // 3 hours
+const AVATAR_COLORS = ['#0891b2','#7c3aed','#059669','#dc2626','#d97706','#2563eb','#db2777','#0d9488','#9333ea','#16a34a'];
 
-function getCacheKey(mode){ return 'jr_jobs_'+mode; }
-function getCache(mode){
-  try{
-    const raw = localStorage.getItem(getCacheKey(mode));
-    if(!raw) return null;
-    const {jobs,ts} = JSON.parse(raw);
-    if(Date.now()-ts > CACHE_TTL) return null; // expired
-    return jobs;
-  }catch(e){ return null; }
-}
-function setCache(mode, jobs){
-  try{
-    localStorage.setItem(getCacheKey(mode), JSON.stringify({jobs, ts:Date.now()}));
-  }catch(e){}
-}
-function getCacheAge(mode){
-  try{
-    const raw = localStorage.getItem(getCacheKey(mode));
-    if(!raw) return null;
-    const {ts} = JSON.parse(raw);
-    const mins = Math.round((Date.now()-ts)/60000);
-    return mins < 60 ? mins+'m ago' : Math.round(mins/60)+'h ago';
-  }catch(e){ return null; }
-}
-function clearAllCache(){
-  ['de','ai','ct'].forEach(m=>localStorage.removeItem(getCacheKey(m)));
-}
-
-const PROMPTS = {
-de: `Generate exactly 12 Data Engineer job listings as a JSON array. No explanation, no markdown, just the raw JSON array starting with [ and ending with ].
-
-Rules: Full-time permanent. H1B sponsorship open. Dallas/DFW metro area (Dallas, Plano, Frisco, Irving, Richardson, Addison, McKinney, Allen, Arlington, Fort Worth) or Remote. On-site, hybrid, remote all OK.
-
-Skills focus — Databricks primary, others secondary: Azure Databricks, PySpark, Delta Lake, DLT, Snowflake, dbt, ADF, Kafka, Python, SQL, AWS Glue, BigQuery.
-
-Companies: mix of Big Tech (Microsoft, Amazon, Google), Healthcare (Humana, McKesson, UnitedHealth), Finance (JPMorgan Plano, Capital One, Fidelity Investments Westlake), Dallas/FW area (AT&T, Toyota Connected, Celanese, American Airlines Fort Worth, BNSF Railway, Alcon, Sabre Southlake, Deloitte, Accenture, Cognizant, TCS), AI/Data platforms (Databricks, Snowflake, Confluent).
-
-Use titles like: Senior Data Engineer, Lead Data Engineer, Staff Data Engineer, Data Platform Engineer, Software Engineer (Data), Analytics Engineer, Platform Engineer — whichever fits the company.
-
-For applyUrl use the company's LinkedIn jobs page directly — format: https://www.linkedin.com/company/[company-linkedin-slug]/jobs/
-Examples:
-- AT&T → https://www.linkedin.com/company/att/jobs/
-- JPMorgan Chase → https://www.linkedin.com/company/jpmorgan-chase/jobs/
-- Microsoft → https://www.linkedin.com/company/microsoft/jobs/
-- Amazon → https://www.linkedin.com/company/amazon/jobs/
-- Databricks → https://www.linkedin.com/company/databricks/jobs/
-- Humana → https://www.linkedin.com/company/humana/jobs/
-- Deloitte → https://www.linkedin.com/company/deloitte/jobs/
-- Cognizant → https://www.linkedin.com/company/cognizant/jobs/
-- Snowflake → https://www.linkedin.com/company/snowflake-computing/jobs/
-- Capital One → https://www.linkedin.com/company/capital-one/jobs/
-- Accenture → https://www.linkedin.com/company/accenture/jobs/
-- TCS → https://www.linkedin.com/company/tata-consultancy-services/jobs/
-- Infosys → https://www.linkedin.com/company/infosys/jobs/
-- Confluent → https://www.linkedin.com/company/confluent/jobs/
-- dbt Labs → https://www.linkedin.com/company/dbt-labs/jobs/
-- Fidelity → https://www.linkedin.com/company/fidelity-investments/jobs/
-- American Airlines → https://www.linkedin.com/company/american-airlines/jobs/
-- BNSF Railway → https://www.linkedin.com/company/bnsf-railway/jobs/
-- McKesson → https://www.linkedin.com/company/mckesson/jobs/
-- UnitedHealth → https://www.linkedin.com/company/unitedhealth-group/jobs/
-- Toyota Connected → https://www.linkedin.com/company/toyota-connected/jobs/
-- Apex Systems → https://www.linkedin.com/company/apex-systems/jobs/
-- TEKsystems → https://www.linkedin.com/company/teksystems/jobs/
-- Kforce → https://www.linkedin.com/company/kforce/jobs/
-For any other company guess the slug from the company name (lowercase, hyphens).
-
-Return ONLY this JSON array, nothing else:
-[{"id":1,"title":"Senior Data Engineer","company":"AT&T","location":"Dallas, TX","salary":"$145K-$175K/yr","postedRaw":"2 days ago","postedScore":2,"sponsorship":"H1B Sponsored","applyUrl":"https://www.linkedin.com/jobs/search/?keywords=Senior+Data+Engineer+AT%26T&location=Dallas-Fort+Worth+TX&f_JT=F","tags":["Databricks","PySpark","Delta Lake","Python","SQL"],"source":"LinkedIn","remote":false,"benefits":["Health Insurance","401k Match","PTO","Dental","Vision"],"aiSkills":[],"seniorityLevel":"Senior","companySize":"Enterprise","databricksFirst":true}]
-
-Generate 12 realistic jobs following that exact structure. Start your response with [ and end with ]`,
-
-ai: `Generate exactly 12 AI Data Engineer job listings as a JSON array. No explanation, no markdown, just the raw JSON array starting with [ and ending with ].
-
-Rules: Full-time permanent. H1B sponsorship open. DFW 50-mile radius (Dallas, Fort Worth, Plano, Frisco, Irving, Westlake, Southlake, Arlington, Lewisville, Denton, Grapevine, McKinney, Allen, Garland, Keller, Coppell) or Remote. On-site, hybrid, remote all OK.
-
-Skills focus — AI/ML data engineering: MLflow, Databricks AI, LLM pipelines, RAG, Vector DB, Azure OpenAI, Feature Store, MLOps, PySpark, Python.
-
-Companies: mix of AI platforms (Databricks, Snowflake, Confluent, Weights & Biases, Scale AI, Cohere), Big Tech AI teams (Microsoft Azure AI, Amazon AWS AI, Google), Healthcare AI (Komodo Health, Tempus AI, Innovaccer), Funded startups (Anyscale, Together AI, Arize AI, Tecton).
-
-Use titles like: AI Data Engineer, ML Data Engineer, MLOps Engineer, Senior Software Engineer (ML Platform), Data Platform Engineer (AI), ML Infrastructure Engineer.
-
-applyUrl: https://www.linkedin.com/jobs/search/?keywords=[title]+[company]&location=Dallas-Fort+Worth+TX&f_JT=F&f_TPR=r2592000
-
-Return ONLY a JSON array of 12 objects with fields: id, title, company, location, salary, postedRaw, postedScore, sponsorship, applyUrl, tags, source, remote, benefits, aiSkills, seniorityLevel, companySize, databricksFirst, hasEquity. Start with [ end with ]`
-
-,
-
-ct: `Generate exactly 12 Corp-to-Corp (C2C) and Contract-to-Hire (C2H) Data Engineer job listings as a JSON array. No explanation, no markdown, just raw JSON starting with [ and ending with ].
-
-IMPORTANT: C2C and C2H ONLY. No W2. No full-time permanent.
-C2C = contractor bills through own LLC directly to client at $85-120/hr.
-C2H = starts as contract $75-100/hr, converts to full-time permanent after 3-6 months (H1B friendly on conversion).
-
-Skills: Databricks, PySpark, Delta Lake, Python, SQL, Azure, AWS, Kafka, dbt, Snowflake.
-Companies: AT&T, JPMorgan Chase Plano, Humana, Capital One, Toyota Connected, Celanese, Fiserv, FIS, McKesson, Deloitte, Accenture, Cigna, Elevance, Apex Systems, TEKsystems, Kforce.
-Location: Dallas/DFW metro and Remote. On-site hybrid remote all OK.
-
-Return ONLY a JSON array of 12 objects: id, title, company, location, salary, hourlyRate, postedRaw, postedScore, sponsorship, contractType, duration, applyUrl, tags, source, remote, benefits, aiSkills, seniorityLevel, companySize, databricksFirst. Start with [ end with ]`};
-
-function setMode(mode) {
-  currentMode = mode;
-  const deBtn = document.getElementById('mode-de');
-  const aiBtn = document.getElementById('mode-ai');
-  const desc  = document.getElementById('mode-desc');
-  const role  = document.getElementById('role-display');
-  if (mode === 'de') {
-    deBtn.style.cssText='flex:1;padding:9px;border-radius:9px;border:2px solid #06b6d4;background:rgba(6,182,212,.15);color:#06b6d4;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit';
-    aiBtn.style.cssText='flex:1;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.08);background:transparent;color:#475569;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit';
-    if(desc){desc.style.borderLeftColor='#06b6d4';desc.textContent='Databricks · PySpark · Delta Lake · Snowflake · dbt · Iceberg · Hudi · Kafka · Airflow · ADF · BigQuery';}
-    if(role) role.textContent='🗄️ Data Engineer — Databricks · PySpark · DFW + Remote';
-    const ld=document.getElementById('loc-display');if(ld)ld.textContent='📍 DFW 50-Mile Radius + Remote ('+DFW_CITIES.split(',').length+' cities)';
-  } else {
-    aiBtn.style.cssText='flex:1;padding:9px;border-radius:9px;border:2px solid #a78bfa;background:rgba(167,139,250,.15);color:#a78bfa;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit';
-    deBtn.style.cssText='flex:1;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.08);background:transparent;color:#475569;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit';
-    if(desc){desc.style.borderLeftColor='#a78bfa';desc.textContent='📍 50-Mile radius: '+DFW_CITIES+' + Remote';}
-    if(role) role.textContent='🤖 AI Data Engineer — MLflow · LLM · DFW + Remote';
-  }
-  if (mode === 'ct') {
-    document.getElementById('mode-ct').style.cssText='flex:1;padding:9px;border-radius:9px;border:2px solid #34d399;background:rgba(52,211,153,.15);color:#34d399;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit';
-    document.getElementById('mode-de').style.cssText='flex:1;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.08);background:transparent;color:#475569;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit';
-    document.getElementById('mode-ai').style.cssText='flex:1;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.08);background:transparent;color:#475569;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit';
-    if(desc){desc.style.borderLeftColor='#34d399';desc.textContent='C2C $85-120/hr · C2H $75-100/hr → FT · 50-Mile Radius: Dallas · Fort Worth · Plano · Frisco · Irving · Richardson · Addison · Carrollto... + Remote';}
-    if(role) role.textContent='🤝 C2C / C2H — $85-120/hr · DFW + Remote';
-  }
-  allJobs=[];
-    document.getElementById('job-list').innerHTML='';
-    document.getElementById('stats-grid').style.display='none';
-    document.getElementById('filters-row').style.display='none';
-    document.getElementById('search-empty').style.display='none';
-    document.getElementById('search-hero').style.display='block';
-    const oldCacheBar = document.getElementById('cache-bar');
-    if(oldCacheBar) oldCacheBar.style.display='none';
-    const nb = document.getElementById('new-positions-bar');
-    if(nb) nb.style.display='none';
-  }
-}
-
-async function runSearch() {
-  allJobs = [];
-  const seenIds = new Set();
-  document.getElementById('search-btn').disabled = true;
-  document.getElementById('search-btn').innerHTML = '<span style="width:13px;height:13px;border:2px solid #1e3a5f;border-top-color:#06b6d4;border-radius:50%;animation:spin 1s linear infinite;display:inline-block"></span> Scanning...';
-  document.getElementById('search-error').style.display = 'none';
-  document.getElementById('search-hero').style.display = 'none';
-  document.getElementById('search-empty').style.display = 'none';
-  document.getElementById('scan-status').style.display = 'flex';
-  document.getElementById('scan-count').style.display = 'none';
-  document.getElementById('stats-grid').style.display = 'none';
-  document.getElementById('filters-row').style.display = 'none';
-  document.getElementById('job-list').innerHTML = '<div class="job-card shimmer" style="height:100px;border-left:3px solid #1e3a5f"></div><div class="job-card shimmer" style="height:100px;border-left:3px solid #1e3a5f;margin-top:10px"></div><div class="job-card shimmer" style="height:100px;border-left:3px solid #1e3a5f;margin-top:10px"></div>';
-
-  let scanIdx = 0;
-  scanTimer = setInterval(() => {
-    scanIdx = (scanIdx+1) % SCAN_STEPS.length;
-    document.getElementById('scan-icon').textContent = SCAN_STEPS[scanIdx].icon;
-    document.getElementById('scan-src').textContent = SCAN_STEPS[scanIdx].src;
-  }, 1400);
-  startProgress();
-
-  try {
-    const rawKey = localStorage.getItem('jr_api_key')||'';
-    const apiKey = rawKey.replace(/[^\x20-\x7E]/g,'').trim();
-    if (!apiKey) { throw new Error('Please enter your Anthropic API key in the yellow bar above.'); }
-    const proxyUrl = localStorage.getItem('jr_proxy')||'';
-    if (!proxyUrl) throw new Error('Please enter your Proxy URL in the bar above.');
-    const userMsg =
-      currentMode==='de' ? 'Search LinkedIn (site:linkedin.com/jobs), Dice (site:dice.com), Wellfound (site:wellfound.com), X.com (site:x.com), and company ATS pages for REAL LIVE job postings. Search by SKILLS not title — many companies title roles as Software Engineer, Platform Engineer, Backend Engineer, Analytics Engineer, Staff Engineer, Engineer II/III but the responsibilities are data engineering. Search 1: databricks pyspark delta lake site:linkedin.com/jobs remote dallas H1B 2025. Search 2: spark etl pipeline python sql site:linkedin.com/jobs texas remote H1B sponsor. Search 3: hiring databricks pyspark remote equity site:x.com. Search 4: databricks pyspark site:wellfound.com equity remote H1B. Search 5: databricks data engineer site:boards.greenhouse.io OR site:jobs.lever.co dallas remote. Full-time permanent, H1B friendly, on-site hybrid remote, DFW metro plus remote. For applyUrl use linkedin.com/company/[slug]/jobs/ format. Return JSON array.'
-      : 'Generate 12 full-time H1B-friendly AI Data Engineer jobs. DFW 50-mile radius + Remote. Include roles titled ML Engineer, MLOps Engineer, Platform Engineer, Staff Engineer, Backend Engineer — any title where responsibilities involve ML data pipelines, LLM infra, or Databricks AI. Skills: MLflow, Databricks AI, LLM pipelines, RAG, Vector DB, Azure OpenAI, Spark ML, Feature Store. Companies: Databricks, Snowflake, Komodo Health, Tempus AI, Innovaccer, Microsoft Azure AI, Amazon AI, Weights & Biases, Scale AI, Cohere, Anyscale, Google Cloud AI, Arize AI. applyUrl: use linkedin.com/company/[slug]/jobs/ format. Set hasEquity:true for startups. Return JSON array only.'
-      : 'Generate 12 C2C and C2H Data Engineer jobs for DFW 50-mile radius (Dallas, Fort Worth, Westlake, Plano, Frisco, Irving, Arlington, Southlake, Grapevine, Lewisville, Denton, Grand Prairie, Keller, Coppell, Garland) and Remote 2025. C2C = Corp-to-Corp billed through own LLC at $85-120/hr. C2H = Contract-to-Hire starting $75-100/hr converting to full-time permanent after 3-6 months — H1B friendly on conversion. Skills: Databricks, PySpark, Delta Lake, Python, SQL, Azure, AWS. Companies: AT&T, JPMorgan Plano, Humana, Capital One, Toyota Connected, Celanese, Deloitte, Accenture, Fiserv, FIS, McKesson, Cigna, Apex Systems, TEKsystems, Kforce. Include hourlyRate, contractType (C2C or C2H), duration. applyUrl: https://www.dice.com/jobs?q=databricks+pyspark+c2c+c2h&location=Dallas+TX. Return JSON array only.'
-    const res = await fetch(proxyUrl, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({apiKey:apiKey,model:'claude-sonnet-4-6',max_tokens:6000,system:PROMPTS[currentMode],messages:[{role:'user',content:userMsg}]})
-    });
-    if (!res.ok) { const t=await res.text(); throw new Error('Error '+res.status+': '+t.slice(0,200)); }
-    const data = await res.json();
-    const raw = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
-    const jsonStart = raw.indexOf('[');
-    const jsonEnd = raw.lastIndexOf(']');
-    const jsonStr = (jsonStart >= 0 && jsonEnd > jsonStart) ? raw.slice(jsonStart, jsonEnd+1) : null;
-    const m = jsonStr ? [jsonStr] : raw.match(/\[[\s\S]*\]/);
-    if (m) { try { const a=JSON.parse(m[0]); if(Array.isArray(a)&&a.length) {
-      const sorted = a.sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
-      // Compare with existing cache — only update if genuinely new positions exist
-      const existing = getCache(currentMode)||[];
-      const existingKeys = new Set(existing.map(j=>(j.company+'|'+j.title).toLowerCase()));
-      const newPositions = sorted.filter(j=>!existingKeys.has((j.company+'|'+j.title).toLowerCase()));
-      if(newPositions.length > 0 || existing.length === 0){
-        allJobs = sorted;
-        setCache(currentMode, allJobs);
-        renderJobList();
-        document.getElementById('scan-count').style.display='inline';
-        document.getElementById('scan-count').textContent=allJobs.length+' found';
-        if(newPositions.length > 0 && existing.length > 0){
-          // Show new positions banner
-          let nb = document.getElementById('new-positions-bar');
-          if(!nb){ nb=document.createElement('div'); nb.id='new-positions-bar'; document.getElementById('job-list').insertAdjacentElement('beforebegin',nb); }
-          nb.style.cssText='background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:11px;color:#34d399;font-family:\'Space Mono\'';
-          nb.textContent='✨ '+newPositions.length+' new position'+(newPositions.length>1?'s':'')+' found since last check';
-          nb.style.display='block';
-        }
-      } else {
-        // No new positions — extend cache TTL silently, keep current display
-        setCache(currentMode, existing);
-        allJobs = existing;
-        renderJobList();
-        document.getElementById('scan-count').style.display='inline';
-        document.getElementById('scan-count').textContent=existing.length+' found';
-        let cbar = document.getElementById('cache-bar');
-        if(!cbar){ cbar=document.createElement('div'); cbar.id='cache-bar'; document.getElementById('job-list').insertAdjacentElement('beforebegin',cbar); }
-        cbar.style.cssText='background:rgba(6,182,212,.05);border:1px solid rgba(6,182,212,.1);border-radius:8px;padding:8px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;';
-        cbar.innerHTML=`<span style="font-size:11px;color:#475569;font-family:'Space Mono'">✅ No new positions since last check — showing current listings</span><button onclick="runSearch(true)" style="font-size:11px;color:#06b6d4;background:none;border:none;cursor:pointer;font-family:'Space Mono'">🔄 Force Refresh</button>`;
-        cbar.style.display='flex';
-      }
-    } } catch(e2) { throw new Error('Parse error: '+e2.message); } }
-    if (!allJobs.length) {
-      // Show first 300 chars of raw response to debug
-      const preview = raw ? raw.slice(0,200) : '(empty response)';
-      throw new Error('Could not parse jobs. Response preview: ' + preview);
-    }
-  } catch(e) {
-    document.getElementById('search-error').textContent = '⚠️ '+e.message;
-    document.getElementById('search-error').style.display = 'block';
-  }
-  clearInterval(scanTimer);
-  endProgress();
-  document.getElementById('scan-status').style.display = 'none';
-  document.getElementById('search-btn').disabled = false;
-  document.getElementById('search-btn').innerHTML = '⚡ Find Jobs';
-  if (!allJobs.length) document.getElementById('search-empty').style.display = 'block';
-}
-
-function renderJobList() {
-  let list = allJobs.filter(j => remoteFilter==='all'?true:remoteFilter==='remote'?j.remote:!j.remote);
-  if (sortMode==='salary') {
-    list.sort((a,b)=>(parseInt((b.salary||'0').replace(/[^0-9]/g,''))||0)-(parseInt((a.salary||'0').replace(/[^0-9]/g,''))||0));
-  } else {
-    // Default: Databricks jobs first, then others — each group sorted by recency
-    const dbJobs    = list.filter(j=>j.databricksFirst).sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
-    const otherJobs = list.filter(j=>!j.databricksFirst).sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
-    list = [...dbJobs, ...otherJobs];
-  }
-  const remote  = allJobs.filter(j=>j.remote).length;
-  const withSal = allJobs.filter(j=>j.salary&&j.salary!=='Not Listed').length;
-  const dbCount = allJobs.filter(j=>j.databricksFirst).length;
-  document.getElementById('stats-grid').style.display = 'grid';
-  document.getElementById('filters-row').style.display = 'flex';
-  document.getElementById('s-total').textContent = allJobs.length;
-  document.getElementById('s-remote').textContent = remote;
-  document.getElementById('s-h1b').textContent = allJobs.length;
-  document.getElementById('s-salary').textContent = withSal;
-  document.getElementById('result-count').textContent = list.length + ' positions';
-
-  // Build HTML with Databricks divider
-  let html = '';
-  const showDivider = currentMode === 'de' && list.some(j=>j.databricksFirst) && list.some(j=>!j.databricksFirst);
-  let dividerInserted = false;
-  list.forEach((j,i) => {
-    if (showDivider && !dividerInserted && !j.databricksFirst) {
-      html += `<div style="display:flex;align-items:center;gap:12px;margin:18px 0 10px">
-        <div style="flex:1;height:1px;background:rgba(255,255,255,.07)"></div>
-        <span style="font-size:10px;color:#475569;font-family:'Space Mono';white-space:nowrap;padding:4px 12px;border:1px solid rgba(255,255,255,.07);border-radius:20px">Other Data Engineering Tools</span>
-        <div style="flex:1;height:1px;background:rgba(255,255,255,.07)"></div>
-      </div>`;
-      dividerInserted = true;
-    }
-    html += renderCard(j,i,'search');
-  });
-  document.getElementById('job-list').innerHTML = html;
-}
-
-function setRemote(val, btn) {
-  remoteFilter = val;
-  document.querySelectorAll('.filter-chips .chip').forEach(c=>c.classList.remove('active'));
-  btn.classList.add('active');
-  renderJobList();
-}
-function setSort(val) { sortMode = val; renderJobList(); }
-
-// ── SAVE / TRACK ───────────────────────────────────────────────────────────────
-function toggleSave(jobStr) {
-  const job = JSON.parse(jobStr);
-  const id = String(job.id||job.title+job.company);
-  const idx = savedJobs.findIndex(j=>String(j.id||j.title+j.company)===id);
-  if (idx>=0) savedJobs.splice(idx,1); else savedJobs.push(job);
-  saveLS('jr_saved',savedJobs); updateCounts(); renderJobList();
-}
-function removeSaved(id) {
-  savedJobs = savedJobs.filter(j=>String(j.id||j.title+j.company)!==id);
-  saveLS('jr_saved',savedJobs); updateCounts(); renderSaved();
-}
-function saveNote(id, val) {
-  const j = savedJobs.find(j=>String(j.id||j.title+j.company)===id);
-  if (j) { j.notes=val; saveLS('jr_saved',savedJobs); }
-}
-function trackJob(jobStr) {
-  const job = JSON.parse(jobStr);
-  const id = String(job.id||job.title+job.company);
-  if (appJobs.some(j=>String(j.id||j.title+j.company)===id)) { switchTab('tracker'); return; }
-  appJobs.push({...job, status:'Applied', appliedDate:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), notes:''});
-  saveLS('jr_apps',appJobs); updateCounts(); switchTab('tracker');
-}
-function updateStatus(id, val) {
-  const j = appJobs.find(j=>String(j.id||j.title+j.company)===id);
-  if (j) { j.status=val; saveLS('jr_apps',appJobs); renderTracker(); }
-}
-function removeApp(id) {
-  appJobs = appJobs.filter(j=>String(j.id||j.title+j.company)!==id);
-  saveLS('jr_apps',appJobs); updateCounts(); renderTracker();
-}
-
-// ── RENDER SAVED ───────────────────────────────────────────────────────────────
-function renderSaved() {
-  const el = document.getElementById('saved-list');
-  const emp = document.getElementById('saved-empty');
-  if (!savedJobs.length) { el.innerHTML=''; emp.style.display='block'; return; }
-  emp.style.display='none';
-  el.innerHTML = savedJobs.map((j,i)=>renderCard(j,i,'saved')).join('');
-}
-
-// ── RENDER TRACKER ─────────────────────────────────────────────────────────────
-function renderTracker() {
-  const el = document.getElementById('tracker-content');
-  const emp = document.getElementById('tracker-empty');
-  if (!appJobs.length) { el.innerHTML=''; emp.style.display='block'; return; }
-  emp.style.display='none';
-
-  const statuses = Object.keys(STATUS_CONFIG);
-  const counts = {};
-  statuses.forEach(s=>counts[s]=(appJobs.filter(j=>j.status===s).length));
-
-  // Status filter strip
-  let strip = `<div class="status-strip">
-    <button class="status-chip" style="border-color:rgba(6,182,212,.3);color:#06b6d4;background:rgba(6,182,212,.1)" onclick="filterTracker('All',this)">📋 All <span style="background:#06b6d4;color:#000;border-radius:20px;padding:0 5px;font-size:10px">${appJobs.length}</span></button>
-    ${statuses.map(s=>`<button class="status-chip" onclick="filterTracker('${s}',this)">${STATUS_CONFIG[s].emoji} ${s}${counts[s]>0?` <span style="background:${STATUS_CONFIG[s].color};color:#000;border-radius:20px;padding:0 5px;font-size:10px">${counts[s]}</span>`:''}</button>`).join('')}
-  </div>`;
-
-  // Pipeline bar
-  const barSegs = statuses.map(s => {
-    const pct = (counts[s]||0)/appJobs.length*100;
-    return pct>0?`<div class="pipe-seg" style="width:${pct}%;background:${STATUS_CONFIG[s].color}"></div>`:'';
-  }).join('');
-  const legend = statuses.filter(s=>counts[s]>0).map(s=>`<span style="color:${STATUS_CONFIG[s].color}">${STATUS_CONFIG[s].emoji} ${s}: ${counts[s]}</span>`).join('');
-
-  const cards = appJobs.map((job,i)=>{
-    const id = String(job.id||job.title+job.company);
-    const cfg = STATUS_CONFIG[job.status]||STATUS_CONFIG['Applied'];
-    const opts = statuses.map(s=>`<option value="${s}" ${job.status===s?'selected':''}>${STATUS_CONFIG[s].emoji} ${s}</option>`).join('');
-    return `
-    <div class="job-card fade" style="border-left-color:${cfg.color};animation-delay:${i*.04}s">
-      <div class="card-inner">
-        <div class="card-left">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap">
-            <span class="job-title">${job.title}</span>
-            <span class="badge" style="background:${cfg.color}12;border:1px solid ${cfg.color}30;color:${cfg.color}">${cfg.emoji} ${job.status}</span>
-          </div>
-          <div class="job-meta">
-            <span style="color:#5a7a9e;font-weight:500">🏢 ${job.company}</span>
-            <span>📍 ${job.location||''}</span>
-            ${job.salary&&job.salary!=='Not Listed'?`<span class="salary">💰 ${job.salary}</span>`:''}
-            <span>📅 ${job.appliedDate||'—'}</span>
-            <span style="color:#112240;font-family:'Space Mono';font-size:9.5px">via ${job.source||''}</span>
-          </div>
-          ${job.notes?`<p style="font-size:11px;color:#64748b;font-style:italic;margin-top:4px">📝 ${job.notes}</p>`:''}
-        </div>
-        <div class="card-right">
-          <select style="background:#0a1628;border:1px solid ${cfg.color}40;color:${cfg.color};border-radius:7px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600" onchange="updateStatus('${id}',this.value)">${opts}</select>
-          <a href="${buildUrl(job)}" target="_blank" style="background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.2);color:#06b6d4;border-radius:7px;padding:4px 10px;font-size:10px;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:4px;font-family:inherit">View Job ↗</a>
-          <button class="remove-btn" onclick="removeApp('${id}')">Remove</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-
-  el.innerHTML = strip + cards + `<div style="margin-top:20px;background:#060e1c;border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:14px 18px">
-    <p style="font-size:10px;color:#475569;font-family:'Space Mono';margin-bottom:10px">PIPELINE OVERVIEW</p>
-    <div class="pipeline-bar">${barSegs}</div>
-    <div class="pipe-legend">${legend}</div>
-  </div>`;
-
-  document.getElementById('tracker-filter-val') && filterTracker(document.getElementById('tracker-filter-val').value);
-}
-
-let trackerFilter = 'All';
-function filterTracker(val, btn) {
-  trackerFilter = val;
-  document.querySelectorAll('.status-chip').forEach(c=>c.style.background='transparent');
-  if(btn) btn.style.background = 'rgba(255,255,255,.06)';
-  renderTracker();
-}
-
-// ── SALARY ─────────────────────────────────────────────────────────────────────
+const SCAN_STEPS = {
+  de:[{src:'LinkedIn',icon:'💼'},{src:'Dice',icon:'🎲'},{src:'Glassdoor',icon:'🚪'},
+      {src:'Indeed',icon:'🔍'},{src:'Wellfound',icon:'🚀'},{src:'Builtin',icon:'🏗️'},
+      {src:'ZipRecruiter',icon:'⚡'},{src:'Companies',icon:'🏢'},{src:'H1B boards',icon:'🛂'}],
+  ai:[{src:'Wellfound',icon:'🚀'},{src:'LinkedIn',icon:'💼'},{src:'YC Jobs',icon:'🧡'},
+      {src:'Greenhouse',icon:'🌿'},{src:'Lever ATS',icon:'⚙️'},{src:'AngelList',icon:'✨'},
+      {src:'AI companies',icon:'🤖'},{src:'Remote boards',icon:'🌐'},{src:'Levels.fyi',icon:'📊'}],
+  ct:[{src:'Dice.com',icon:'🎲'},{src:'TEKsystems',icon:'🏢'},{src:'Apex Systems',icon:'📋'},
+      {src:'LinkedIn contract',icon:'💼'},{src:'Kforce',icon:'💼'},{src:'Randstad',icon:'🔍'},
+      {src:'C2C boards',icon:'💰'},{src:'Staffing firms',icon:'🤝'},{src:'DFW Metro',icon:'📍'}],
+};
 const SAL_PROMPT = `You are a compensation research expert. Use web_search to find CURRENT 2025 salary data for the specified role in Dallas TX. Search levels.fyi, Glassdoor, LinkedIn, Indeed, Glassdoor, ZipRecruiter. Return ONLY a raw JSON object (no markdown, no code fences):
 {"role":"string","location":"Dallas, TX","asOf":"2025","ranges":[{"level":"Entry (0-3 yrs)","base":"$X-$Y","total":"$X-$Y","notes":"string"},{"level":"Mid (3-6 yrs)","base":"$X-$Y","total":"$X-$Y","notes":"string"},{"level":"Senior (6-10 yrs)","base":"$X-$Y","total":"$X-$Y","notes":"string"},{"level":"Lead/Staff (10+ yrs)","base":"$X-$Y","total":"$X-$Y","notes":"string"}],"topPayers":[{"company":"string","range":"string","notes":"string"}],"hotSkillsBonus":[{"skill":"string","premiumPct":"string"}],"h1bNotes":"string","negotiationTip":"string","sources":["string"]}`;
-
-async function runSalary() {
-  const role = document.getElementById('salary-custom').value.trim() || document.getElementById('salary-role').value;
-  document.getElementById('salary-btn').disabled = true;
-  document.getElementById('salary-btn').innerHTML = '<span style="width:13px;height:13px;border:2px solid #1e3a5f;border-top-color:#06b6d4;border-radius:50%;animation:spin 1s linear infinite;display:inline-block"></span> Researching...';
-  document.getElementById('salary-error').style.display = 'none';
-  document.getElementById('salary-empty').style.display = 'none';
-  document.getElementById('salary-results').innerHTML = '';
-  document.getElementById('salary-loading').style.display = 'block';
-  try {
-    const rawKey = localStorage.getItem('jr_api_key')||'';
-    const apiKey = rawKey.replace(/[^\x20-\x7E]/g,'').trim();
-    if (!apiKey) { throw new Error('Please enter your Anthropic API key in the yellow bar above.'); }
-    const proxyUrl = localStorage.getItem('jr_proxy')||'';
-    if (!proxyUrl) { throw new Error('Please enter your Proxy URL in the bar above.'); }
-    const res = await fetch(proxyUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:apiKey,model:'claude-sonnet-4-6',max_tokens:2000,system:SAL_PROMPT,messages:[{role:'user',content:`Find 2025 salary for "${role}" in Dallas TX. Search levels.fyi, Glassdoor, LinkedIn, Indeed. Return only the JSON object.`}]})});
-    if (!res.ok) throw new Error('API error '+res.status);
-    const d = await res.json();
-    const raw = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
-    const m = raw.match(/\{[\s\S]*\}/);
-    if (!m) throw new Error('Could not parse salary data.');
-    renderSalary(JSON.parse(m[0]));
-  } catch(e) {
-    document.getElementById('salary-error').textContent = '⚠️ '+e.message;
-    document.getElementById('salary-error').style.display = 'block';
-    document.getElementById('salary-empty').style.display = 'block';
-  }
-  document.getElementById('salary-loading').style.display = 'none';
-  document.getElementById('salary-btn').disabled = false;
-  document.getElementById('salary-btn').innerHTML = '💰 Get Salaries';
-}
-
-function renderSalary(data) {
-  const BAND_COLORS = ['#60a5fa','#34d399','#f59e0b','#f472b6'];
-  const bands = (data.ranges||[]).map((r,i)=>`
-    <div class="salary-band fade" style="background:#070e1c;border:1px solid ${BAND_COLORS[i]}25;border-left:3px solid ${BAND_COLORS[i]};animation-delay:${i*.07}s">
-      <div class="salary-band-level">${(r.level||'').toUpperCase()}</div>
-      <div class="salary-band-base" style="color:${BAND_COLORS[i]}">${r.base||'N/A'}</div>
-      <div class="salary-band-total">Total comp: <strong style="color:#94a3b8">${r.total||'N/A'}</strong></div>
-      ${r.notes?`<p style="font-size:10.5px;color:#475569;font-style:italic">${r.notes}</p>`:''}
-    </div>`).join('');
-
-  const payers = (data.topPayers||[]).map(c=>`
-    <div class="payer-row">
-      <span style="color:#94a3b8;font-weight:500">${c.company}</span>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="color:#34d399;font-weight:700;font-family:'Space Mono'">${c.range}</span>
-        ${c.notes?`<span style="font-size:10px;color:#475569;font-style:italic">${c.notes}</span>`:''}
-      </div>
-    </div>`).join('');
-
-  const bonuses = (data.hotSkillsBonus||[]).map(s=>`
-    <div class="skill-bonus">
-      <div style="font-size:12px;font-weight:700;color:#a78bfa">+${s.premiumPct}</div>
-      <div style="font-size:10px;color:#64748b;margin-top:2px">⚡ ${s.skill}</div>
-    </div>`).join('');
-
-  document.getElementById('salary-results').innerHTML = `
-    <div style="background:linear-gradient(135deg,#09162b,#070f1e);border:1px solid rgba(6,182,212,.15);border-radius:13px;padding:16px 20px;margin-bottom:14px">
-      <h2 style="font-size:17px;font-weight:700;color:#f1f5f9;margin-bottom:4px">${data.role||''}</h2>
-      <p style="font-size:11px;color:#475569">📍 ${data.location||'Dallas, TX'} · As of ${data.asOf||'2025'}</p>
-    </div>
-    <div class="salary-grid">${bands}</div>
-    <div style="background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);border-radius:12px;padding:14px 18px;margin-bottom:12px">
-      <p style="font-size:11px;color:#34d399;font-weight:700;font-family:'Space Mono';margin-bottom:6px">🎯 YOUR POSITION — NIKHIL BOORLA (13 YRS · LEAD/SENIOR)</p>
-      <p style="font-size:13px;color:#f1f5f9">You fall in the <strong style="color:#34d399">Lead/Staff (10+ yrs)</strong> bracket. Your $150K target is within market range — <strong>push for the top of the band or above</strong> given your Humana healthcare AI experience.</p>
-      ${data.negotiationTip?`<p style="font-size:11.5px;color:#6ee7b7;margin-top:6px">💡 ${data.negotiationTip}</p>`:''}
-    </div>
-    ${payers?`<div class="top-payers"><p style="font-size:10px;color:#475569;font-family:'Space Mono';margin-bottom:10px">TOP PAYING COMPANIES — DALLAS</p>${payers}</div>`:''}
-    ${bonuses?`<div style="margin-bottom:12px"><p style="font-size:10px;color:#475569;font-family:'Space Mono';margin-bottom:10px">AI SKILL SALARY PREMIUMS</p><div class="skill-bonuses">${bonuses}</div></div>`:''}
-    ${data.h1bNotes?`<div style="background:rgba(6,182,212,.05);border:1px solid rgba(6,182,212,.18);border-radius:10px;padding:12px 16px;font-size:12px;color:#7dd3fc;margin-bottom:10px">🛂 <strong>H1B Note:</strong> ${data.h1bNotes}</div>`:''}
-    ${data.sources?.length?`<p style="font-size:10px;color:#1e3a5f;font-family:'Space Mono'">Sources: ${data.sources.join(' · ')}</p>`:''}
-  `;
-}
-
-
-// ── COMPANIES DATA ────────────────────────────────────────────────────────────
 const COMPANIES = [
   // ── TIER 1: BIG TECH — Highest Pay, Competitive ─────────────────────────────
   {name:"Amazon / AWS",responseSpeed:"⚡⚡ 2-3 wks",cat:"bigtech",tags:["Python","Spark","AWS"],why:"#1 H1B sponsor (15,524 LCAs). AWS data engineering roles match your pipeline expertise perfectly. Most openings of any company.",salary:"$159K avg · $140-200K",remote:true,size:"Enterprise",h1b:"#1 Sponsor (15,524 LCAs)",linkedin:"Amazon AWS data engineer"},
@@ -1223,91 +636,167 @@ const COMPANIES = [
   {name:"Palantir",cat:"bigtech",tags:["Python","Spark","SQL"],why:"543 LCAs, $172K avg. Data platform engineering for enterprise AI. Government + commercial.",salary:"$172K avg",remote:false,size:"Enterprise",h1b:"Steady (543 LCAs)",linkedin:"Palantir data engineer"},
   {name:"DoorDash",cat:"bigtech",tags:["Python","Spark","Kafka"],why:"765 LCAs, $168K avg. Real-time logistics data pipelines — Kafka + Spark at scale.",salary:"$168K avg",remote:true,size:"Enterprise",h1b:"Strong (765 LCAs)",linkedin:"DoorDash data engineer"},
 ];
+const PROMPTS = {
+de: `Generate exactly 12 Data Engineer job listings as a JSON array. No explanation, no markdown, just the raw JSON array starting with [ and ending with ].
 
-let coFilter = 'all';
-function filterCo(val, btn) {
-  coFilter = val;
-  document.querySelectorAll('#tab-companies .chip').forEach(c=>c.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  renderCompanies();
+Rules: Full-time permanent. H1B sponsorship open. Dallas/DFW metro area (Dallas, Plano, Frisco, Irving, Richardson, Addison, McKinney, Allen, Arlington, Fort Worth) or Remote. On-site, hybrid, remote all OK.
+
+Skills focus — Databricks primary, others secondary: Azure Databricks, PySpark, Delta Lake, DLT, Snowflake, dbt, ADF, Kafka, Python, SQL, AWS Glue, BigQuery.
+
+Companies: mix of Big Tech (Microsoft, Amazon, Google), Healthcare (Humana, McKesson, UnitedHealth), Finance (JPMorgan Plano, Capital One, Fidelity Investments Westlake), Dallas/FW area (AT&T, Toyota Connected, Celanese, American Airlines Fort Worth, BNSF Railway, Alcon, Sabre Southlake, Deloitte, Accenture, Cognizant, TCS), AI/Data platforms (Databricks, Snowflake, Confluent).
+
+Use titles like: Senior Data Engineer, Lead Data Engineer, Staff Data Engineer, Data Platform Engineer, Software Engineer (Data), Analytics Engineer, Platform Engineer — whichever fits the company.
+
+For applyUrl use the company's LinkedIn jobs page directly — format: https://www.linkedin.com/company/[company-linkedin-slug]/jobs/
+Examples:
+- AT&T → https://www.linkedin.com/company/att/jobs/
+- JPMorgan Chase → https://www.linkedin.com/company/jpmorgan-chase/jobs/
+- Microsoft → https://www.linkedin.com/company/microsoft/jobs/
+- Amazon → https://www.linkedin.com/company/amazon/jobs/
+- Databricks → https://www.linkedin.com/company/databricks/jobs/
+- Humana → https://www.linkedin.com/company/humana/jobs/
+- Deloitte → https://www.linkedin.com/company/deloitte/jobs/
+- Cognizant → https://www.linkedin.com/company/cognizant/jobs/
+- Snowflake → https://www.linkedin.com/company/snowflake-computing/jobs/
+- Capital One → https://www.linkedin.com/company/capital-one/jobs/
+- Accenture → https://www.linkedin.com/company/accenture/jobs/
+- TCS → https://www.linkedin.com/company/tata-consultancy-services/jobs/
+- Infosys → https://www.linkedin.com/company/infosys/jobs/
+- Confluent → https://www.linkedin.com/company/confluent/jobs/
+- dbt Labs → https://www.linkedin.com/company/dbt-labs/jobs/
+- Fidelity → https://www.linkedin.com/company/fidelity-investments/jobs/
+- American Airlines → https://www.linkedin.com/company/american-airlines/jobs/
+- BNSF Railway → https://www.linkedin.com/company/bnsf-railway/jobs/
+- McKesson → https://www.linkedin.com/company/mckesson/jobs/
+- UnitedHealth → https://www.linkedin.com/company/unitedhealth-group/jobs/
+- Toyota Connected → https://www.linkedin.com/company/toyota-connected/jobs/
+- Apex Systems → https://www.linkedin.com/company/apex-systems/jobs/
+- TEKsystems → https://www.linkedin.com/company/teksystems/jobs/
+- Kforce → https://www.linkedin.com/company/kforce/jobs/
+For any other company guess the slug from the company name (lowercase, hyphens).
+
+Return ONLY this JSON array, nothing else:
+[{"id":1,"title":"Senior Data Engineer","company":"AT&T","location":"Dallas, TX","salary":"$145K-$175K/yr","postedRaw":"2 days ago","postedScore":2,"sponsorship":"H1B Sponsored","applyUrl":"https://www.linkedin.com/jobs/search/?keywords=Senior+Data+Engineer+AT%26T&location=Dallas-Fort+Worth+TX&f_JT=F","tags":["Databricks","PySpark","Delta Lake","Python","SQL"],"source":"LinkedIn","remote":false,"benefits":["Health Insurance","401k Match","PTO","Dental","Vision"],"aiSkills":[],"seniorityLevel":"Senior","companySize":"Enterprise","databricksFirst":true}]
+
+Generate 12 realistic jobs following that exact structure. Start your response with [ and end with ]`,
+
+ai: `Generate exactly 12 AI Data Engineer job listings as a JSON array. No explanation, no markdown, just the raw JSON array starting with [ and ending with ].
+
+Rules: Full-time permanent. H1B sponsorship open. DFW 50-mile radius (Dallas, Fort Worth, Plano, Frisco, Irving, Westlake, Southlake, Arlington, Lewisville, Denton, Grapevine, McKinney, Allen, Garland, Keller, Coppell) or Remote. On-site, hybrid, remote all OK.
+
+Skills focus — AI/ML data engineering: MLflow, Databricks AI, LLM pipelines, RAG, Vector DB, Azure OpenAI, Feature Store, MLOps, PySpark, Python.
+
+Companies: mix of AI platforms (Databricks, Snowflake, Confluent, Weights & Biases, Scale AI, Cohere), Big Tech AI teams (Microsoft Azure AI, Amazon AWS AI, Google), Healthcare AI (Komodo Health, Tempus AI, Innovaccer), Funded startups (Anyscale, Together AI, Arize AI, Tecton).
+
+Use titles like: AI Data Engineer, ML Data Engineer, MLOps Engineer, Senior Software Engineer (ML Platform), Data Platform Engineer (AI), ML Infrastructure Engineer.
+
+applyUrl: https://www.linkedin.com/jobs/search/?keywords=[title]+[company]&location=Dallas-Fort+Worth+TX&f_JT=F&f_TPR=r2592000
+
+Return ONLY a JSON array of 12 objects with fields: id, title, company, location, salary, postedRaw, postedScore, sponsorship, applyUrl, tags, source, remote, benefits, aiSkills, seniorityLevel, companySize, databricksFirst, hasEquity. Start with [ end with ]`
+
+,
+
+ct: `Generate exactly 12 Corp-to-Corp (C2C) and Contract-to-Hire (C2H) Data Engineer job listings as a JSON array. No explanation, no markdown, just raw JSON starting with [ and ending with ].
+
+IMPORTANT: C2C and C2H ONLY. No W2. No full-time permanent.
+C2C = contractor bills through own LLC directly to client at $85-120/hr.
+C2H = starts as contract $75-100/hr, converts to full-time permanent after 3-6 months (H1B friendly on conversion).
+
+Skills: Databricks, PySpark, Delta Lake, Python, SQL, Azure, AWS, Kafka, dbt, Snowflake.
+Companies: AT&T, JPMorgan Chase Plano, Humana, Capital One, Toyota Connected, Celanese, Fiserv, FIS, McKesson, Deloitte, Accenture, Cigna, Elevance, Apex Systems, TEKsystems, Kforce.
+Location: Dallas/DFW metro and Remote. On-site hybrid remote all OK.
+
+Return ONLY a JSON array of 12 objects: id, title, company, location, salary, hourlyRate, postedRaw, postedScore, sponsorship, contractType, duration, applyUrl, tags, source, remote, benefits, aiSkills, seniorityLevel, companySize, databricksFirst. Start with [ end with ]`};
+
+// ── State ─────────────────────────────────────────────────────────────────
+let currentMode = 'de';
+let allJobs = [];
+let remoteFilter = 'all';
+let sortMode = 'default';
+let savedJobs = JSON.parse(localStorage.getItem('jr_saved') || '[]');
+
+// ── Cache helpers ─────────────────────────────────────────────────────────
+function cacheKey(m){ return 'jr_jobs_'+m; }
+function getCache(m){
+  try{
+    const r = localStorage.getItem(cacheKey(m));
+    if(!r) return null;
+    const {jobs,ts} = JSON.parse(r);
+    return (Date.now()-ts > CACHE_TTL) ? null : jobs;
+  }catch(e){ return null; }
+}
+function setCache(m,jobs){
+  try{ localStorage.setItem(cacheKey(m), JSON.stringify({jobs,ts:Date.now()})); }catch(e){}
+}
+function getCacheAge(m){
+  try{
+    const r = localStorage.getItem(cacheKey(m));
+    if(!r) return null;
+    const {ts} = JSON.parse(r);
+    const mins = Math.round((Date.now()-ts)/60000);
+    return mins < 60 ? mins+'m ago' : Math.round(mins/60)+'h ago';
+  }catch(e){ return null; }
+}
+function clearAllCache(){
+  ['de','ai','ct'].forEach(m=>localStorage.removeItem(cacheKey(m)));
+  showToast('Cache cleared');
 }
 
-function renderCompanies() {
-  const list = coFilter==='all' ? COMPANIES : coFilter==='remote' ? COMPANIES.filter(c=>c.remote) : coFilter==='fast' ? COMPANIES.filter(c=>c.responseSpeed&&(c.responseSpeed.startsWith('⚡⚡⚡')||c.responseSpeed.startsWith('⚡⚡'))) : COMPANIES.filter(c=>c.cat===coFilter);
-  document.getElementById('co-count').textContent = list.length + ' companies';
-  document.getElementById('co-grid').innerHTML = list.map((co,i) => {
-    const h1bColor = co.h1b.includes('Very')||co.h1b.includes('Top') ? '#34d399' : '#fbbf24';
-    return `<div class="job-card fade" style="border-left-color:#06b6d4;animation-delay:${i*.03}s;padding:14px 16px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-        <div>
-          <div style="font-size:13.5px;font-weight:700;color:#f1f5f9;margin-bottom:3px">${co.name}</div>
-          <div style="font-size:10px;color:#475569">${co.size} · ${co.remote?'🌐 Remote-friendly':'📍 On-site'}</div>
-        </div>
-        <span style="font-size:9px;padding:2px 8px;border-radius:20px;background:${h1bColor}12;border:1px solid ${h1bColor}30;color:${h1bColor};font-weight:700;white-space:nowrap">${co.h1b}</span>
-      </div>
-      <div style="font-size:11px;color:#34d399;font-weight:600;margin-bottom:8px">💰 ${co.salary}</div>
-      <p style="font-size:11px;color:#64748b;line-height:1.5;margin-bottom:8px">${co.why}</p>
-      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">
-        ${co.tags.map(t=>`<span style="font-size:9.5px;padding:2px 7px;border-radius:5px;background:${gc(t,TAG_COLORS)}10;border:1px solid ${gc(t,TAG_COLORS)}25;color:${gc(t,TAG_COLORS)}">${t}</span>`).join('')}
-      </div>
-      ${co.responseSpeed?`<div style="font-size:10px;padding:3px 8px;border-radius:6px;background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.15);color:#6ee7b7;margin-bottom:6px;text-align:center">⏱ Response: ${co.responseSpeed}</div>`:''}
-      <a href="https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(co.linkedin)}&f_JT=F&f_TPR=r2592000" target="_blank" class="apply-btn" style="font-size:11px;padding:6px 14px;width:100%;justify-content:center;box-sizing:border-box">
-        🔍 Find ${co.name} Jobs on LinkedIn
-      </a>
-    </div>`;
-  }).join('');
+// ── URL helpers ───────────────────────────────────────────────────────────
+function buildUrl(job) {
+  const raw = (job.applyUrl||'').trim();
+  const slug = (job.company||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  // Accept company LinkedIn pages, Lever, Greenhouse, Wellfound, direct ATS career pages
+  const good = raw && raw !== 'null' && raw !== '#'
+    && (raw.includes('linkedin.com/company/')
+        || raw.includes('/jobs/view/') || raw.includes('lever.co')
+        || raw.includes('greenhouse.io') || raw.includes('dice.com/job-detail')
+        || raw.includes('wellfound.com/jobs') || raw.includes('careers.')
+        || raw.includes('/careers/') || raw.includes('ycombinator.com/companies'));
+  if (good) return raw;
+  // Fallback: company LinkedIn jobs page (always works)
+  return `https://www.linkedin.com/company/${slug}/jobs/`;
 }
 
-// ── INIT ───────────────────────────────────────────────────────────────────────
-function saveKey(val) {
+function googleUrl(job){
+  const q = encodeURIComponent('"'+job.title+'" "'+job.company+'" jobs Dallas remote');
+  return 'https://www.google.com/search?q='+q+'&ibp=htl;jobs';
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────
+function showToast(msg){
+  const t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg || '✅ Done';
+  t.style.opacity='1';
+  setTimeout(()=>t.style.opacity='0', 2200);
+}
+function el(id){ return document.getElementById(id); }
+function show(id){ const e=el(id); if(e) e.style.display=''; }
+function hide(id){ const e=el(id); if(e) e.style.display='none'; }
+
+// ── API key ───────────────────────────────────────────────────────────────
+function saveKey(val){
   const clean = val.replace(/[^\x20-\x7E]/g,'').trim();
   localStorage.setItem('jr_api_key', clean);
   updateStatus();
 }
-function saveProxy(val) {
-  const clean = val.replace(/[^\x20-\x7E]/g,'').trim();
-  localStorage.setItem('jr_proxy', clean);
-  updateStatus();
-}
-function updateStatus() {
+function updateStatus(){
+  if(!localStorage.getItem('jr_proxy')) localStorage.setItem('jr_proxy', PROXY);
   const key = localStorage.getItem('jr_api_key')||'';
-  // Proxy is hardcoded — always available
-  const proxy = localStorage.getItem('jr_proxy')||'https://shrill-hat-ec23.bnikhil545.workers.dev';
-  if (!localStorage.getItem('jr_proxy')) localStorage.setItem('jr_proxy', proxy);
-  const st = document.getElementById('key-status');
-  if (key) { st.textContent = '✅ Ready!'; st.style.color='#34d399'; }
-  else { st.textContent = '⚠️ Enter API key'; st.style.color='#f87171'; }
+  const st = el('key-status');
+  if(st){
+    st.textContent = key ? '✅ Ready' : 'Enter API key';
+    st.className = key ? 'status-ready' : 'status-warn';
+  }
 }
-// Restore saved values on load
-(function() {
-  // Hardcoded proxy URL
-  const PROXY = 'https://shrill-hat-ec23.bnikhil545.workers.dev';
-  if (!localStorage.getItem('jr_proxy')) localStorage.setItem('jr_proxy', PROXY);
-  const key = localStorage.getItem('jr_api_key');
-  const proxy = localStorage.getItem('jr_proxy') || PROXY;
-  if (key) document.getElementById('api-key-input').value = key;
-  const proxyEl = document.getElementById('proxy-url-input');
-  if (proxyEl) proxyEl.value = proxy;
-  updateStatus();
 
-  // Auto-load from cache on page open
-  setTimeout(()=>{
-    if(localStorage.getItem('jr_api_key')){
-      const cached = getCache(currentMode);
-      if(cached && cached.length){
-        runSearch(false); // load from cache instantly
-      }
-    }
-  }, 300);
-})();
-updateCounts();
-
-// ── UI WIRING FOR NEW LAYOUT ──────────────────────────────────────────────
-
-function switchPanel(name, btn) {
+// ── Panel navigation ──────────────────────────────────────────────────────
+function switchPanel(name, btn){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('panel-'+name).classList.add('active');
+  const panel = el('panel-'+name);
+  if(panel) panel.classList.add('active');
   if(btn) btn.classList.add('active');
   if(name==='salary') buildSalaryPanel();
   if(name==='companies') buildCompaniesPanel();
@@ -1317,22 +806,16 @@ function switchPanel(name, btn) {
 }
 
 // ── Mode switcher ─────────────────────────────────────────────────────────
-const MODE_COLORS = {de:'cyan',ai:'purple',ct:'green'};
-
-function setMode(mode) {
+function setMode(mode){
   currentMode = mode;
-  document.querySelectorAll('.mode-btn').forEach(b=>{
-    b.classList.toggle('active', b.id==='mode-'+mode);
-  });
-  const desc = document.getElementById('mode-desc');
-  const role = document.getElementById('role-display');
-  const type = document.getElementById('type-display');
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active', b.id==='mode-'+mode));
+  const desc = el('mode-desc'), role = el('role-display'), type = el('type-display');
   if(mode==='de'){
-    if(desc) desc.textContent='Databricks · PySpark · Delta Lake · DLT · Unity Catalog · ADF · Kafka · dbt · Snowflake · '+DFW_CITIES.split(',').slice(0,5).join(' · ');
+    if(desc) desc.textContent='Databricks · PySpark · Delta Lake · DLT · Unity Catalog · ADF · Kafka · dbt · Snowflake';
     if(role) role.textContent='🗄️ Data Engineer (Databricks / PySpark / Snowflake)';
     if(type) type.textContent='✅ Full-Time · On-site / Hybrid / Remote';
   } else if(mode==='ai'){
-    if(desc) desc.textContent='Databricks AI · MLflow · Feature Store · Vector Search · LLM · RAG · Azure OpenAI · '+DFW_CITIES.split(',').slice(0,4).join(' · ');
+    if(desc) desc.textContent='Databricks AI · MLflow · Feature Store · Vector Search · LLM · RAG · Azure OpenAI';
     if(role) role.textContent='🤖 AI Data Engineer (Databricks AI / MLflow / RAG)';
     if(type) type.textContent='✅ Full-Time · On-site / Hybrid / Remote';
   } else {
@@ -1340,57 +823,54 @@ function setMode(mode) {
     if(role) role.textContent='🤝 C2C / C2H — Databricks · PySpark · DFW + Remote';
     if(type) type.textContent='📋 C2C / C2H · On-site / Hybrid / Remote';
   }
-  allJobs=[];
-  document.getElementById('job-list').innerHTML='';
-  const rh=document.getElementById('results-header');
-  if(rh) rh.style.display='none';
-  const fb=document.getElementById('filters-bar');
-  if(fb) fb.style.display='none';
-  document.getElementById('search-hero').style.display='block';
-  const cb=document.getElementById('cache-bar');
-  if(cb) cb.style.display='none';
-  // Auto-load from cache for this mode
-  const mCache=getCache(mode);
-  if(mCache&&mCache.length){
-    allJobs=mCache;
+  allJobs = [];
+  if(el('job-list')) el('job-list').innerHTML='';
+  hideResultsUI();
+  hide('cache-bar');
+  hide('new-positions-bar');
+  // Auto-load cache for this mode
+  const cached = getCache(mode);
+  if(cached && cached.length){
+    allJobs = cached;
     renderJobList();
-    showResultsUI();
-    const age=getCacheAge(mode);
-    showCacheBar(age);
+    showCacheBar(getCacheAge(mode));
   }
 }
 
+function hideResultsUI(){
+  if(el('results-header')) el('results-header').style.display='none';
+  if(el('filters-bar')) el('filters-bar').style.display='none';
+  if(el('search-hero')) el('search-hero').style.display='block';
+}
+
 function showResultsUI(){
-  document.getElementById('search-hero').style.display='none';
-  document.getElementById('scan-bar').style.display='none';
-  const rh=document.getElementById('results-header');
-  if(rh){ rh.style.display='flex'; }
-  const fb=document.getElementById('filters-bar');
+  hide('search-hero');
+  hide('scan-bar');
+  const rh = el('results-header');
+  if(rh) rh.style.display='flex';
+  const fb = el('filters-bar');
   if(fb) fb.style.display='flex';
-  const rt=document.getElementById('results-title');
-  if(rt) rt.textContent = currentMode==='ct'?'Contract Roles':'Jobs for You';
-  const rl=document.getElementById('result-count-label');
-  if(rl) rl.textContent=allJobs.length+' positions found';
+  const rt = el('results-title');
+  if(rt) rt.textContent = currentMode==='ct' ? 'Contract Roles' : 'Jobs for You';
+  const rl = el('result-count-label');
+  if(rl) rl.textContent = allJobs.length + ' positions found';
 }
 
 function showCacheBar(age){
-  const cb=document.getElementById('cache-bar');
-  if(cb){
-    document.getElementById('cache-age-text').textContent='⚡ '+allJobs.length+' cached positions · '+age;
+  const cb = el('cache-bar');
+  const at = el('cache-age-text');
+  if(cb && at){
+    at.textContent = '⚡ '+allJobs.length+' cached · '+age;
     cb.style.display='flex';
   }
 }
 
-// ── Job card renderer (new design) ───────────────────────────────────────
-const AVATAR_COLORS=[
-  '#0891b2','#7c3aed','#059669','#dc2626','#d97706',
-  '#2563eb','#db2777','#0d9488','#9333ea','#16a34a'
-];
+// ── Job card rendering ────────────────────────────────────────────────────
 function coInitials(name){
   return (name||'?').split(/[\s\-&]/g).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 }
 function coColor(name){
-  let h=0; for(let c of (name||'')) h=(h*31+c.charCodeAt(0))%AVATAR_COLORS.length;
+  let h=0; for(const ch of (name||'')) h=(h*31+ch.charCodeAt(0))%AVATAR_COLORS.length;
   return AVATAR_COLORS[Math.abs(h)];
 }
 function matchClass(score){
@@ -1398,31 +878,28 @@ function matchClass(score){
   return n>=85?'match-high':n>=70?'match-mid':'match-low';
 }
 
-function renderCard(job, i, ctx) {
-  const saved = savedJobs.some(s=>(s.id||s.title+s.company)===(job.id||job.title+job.company));
-  const initials = coInitials(job.company);
-  const color = coColor(job.company);
+function renderCard(job, idx){
+  const jobId = job.id || (job.title+job.company);
+  const saved = savedJobs.some(s=>(s.id||s.title+s.company)===jobId);
   const matchStr = job.atsScore ? job.atsScore+'%' : job.databricksFirst?'92%':'80%';
-  const matchCls = matchClass(matchStr);
-  const isDB = job.databricksFirst;
   const applyUrl = buildUrl(job);
   const gUrl = googleUrl(job);
-  const id = job.id||job.title+job.company;
-
-  return `<div class="job-card" style="animation-delay:${i*0.04}s">
+  return `<div class="job-card" style="animation-delay:${idx*0.04}s">
     <div class="card-top">
-      <div class="co-avatar" style="background:${color}">${initials}</div>
+      <div class="co-avatar" style="background:${coColor(job.company||'')}">
+        ${coInitials(job.company||'')}
+      </div>
       <div class="card-info">
-        <div class="card-title">${job.title||'Data Engineer'}${isDB?'<span class="db-tag" style="font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(34,211,238,.1);color:var(--cyan);margin-left:6px;font-weight:700">⚡ Databricks</span>':''}</div>
+        <div class="card-title">${job.title||'Data Engineer'}${job.databricksFirst?'<span class="db-tag">⚡ Databricks</span>':''}</div>
         <div class="card-company">${job.company||''}${job.location?' · '+job.location:''}</div>
       </div>
       <div class="card-right">
-        <span class="match-badge ${matchCls}">${matchStr} match</span>
+        <span class="match-badge ${matchClass(matchStr)}">${matchStr}</span>
         <span class="posted-label">${job.postedRaw||'Recently'}</span>
       </div>
     </div>
     <div class="card-mid">
-      <span class="card-salary">${job.salary||''}</span>
+      ${job.salary?`<span class="card-salary">${job.salary}</span>`:''}
       ${job.hourlyRate?`<span class="card-rate">${job.hourlyRate}</span>`:''}
       ${job.remote?'<span class="tag">🌐 Remote</span>':''}
       ${job.contractType?`<span class="tag contract">🤝 ${job.contractType}</span>`:''}
@@ -1435,52 +912,53 @@ function renderCard(job, i, ctx) {
     <div class="card-divider"></div>
     <div class="card-btns">
       <a href="${applyUrl}" target="_blank" class="btn-apply">View on LinkedIn →</a>
-      <a href="${gUrl}" target="_blank" class="btn-google">🔍 Google</a>
-      <button class="btn-save${saved?' saved':''}" onclick="toggleSave('${id}',this)" title="${saved?'Unsave':'Save'}">${saved?'🔖':'☆'}</button>
+      <a href="${gUrl}" target="_blank" class="btn-google">🔍</a>
+      <button class="btn-save${saved?' saved':''}" onclick="toggleSave('${jobId}',this)">${saved?'🔖':'☆'}</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <button onclick="openTailor('${jobId}')" style="flex:1;padding:7px;border-radius:8px;border:1px solid #27272a;background:rgba(34,211,238,.06);color:#22d3ee;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">✨ Tailor Resume</button>
+      <button data-status-id="${jobId}" onclick="cycleStatus('${jobId}',this)" style="padding:7px 12px;border-radius:8px;border:1px solid #27272a;background:transparent;color:#71717a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">${getStatus(jobId)||'Track ▾'}</button>
     </div>
   </div>`;
 }
 
-// ── Override renderJobList for new layout ─────────────────────────────────
-function renderJobList() {
-  let list = allJobs.filter(j=>remoteFilter==='all'?true:remoteFilter==='remote'?j.remote:j.databricksFirst);
-  if(sortMode==='salary') list.sort((a,b)=>(parseInt((b.salary||'0').replace(/\D/g,''))||0)-(parseInt((a.salary||'0').replace(/\D/g,''))||0));
-  else {
-    const db=list.filter(j=>j.databricksFirst).sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
-    const ot=list.filter(j=>!j.databricksFirst).sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
-    list=[...db,...ot];
-  }
-  const el=document.getElementById('job-list');
+// ── Render job list ───────────────────────────────────────────────────────
+function renderJobList(){
+  let list = [...allJobs];
+  if(remoteFilter==='remote') list=list.filter(j=>j.remote);
+  else if(remoteFilter==='db') list=list.filter(j=>j.databricksFirst);
+  const dbJobs = list.filter(j=>j.databricksFirst).sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
+  const otherJobs = list.filter(j=>!j.databricksFirst).sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
+  const ordered = [...dbJobs,...otherJobs];
+  const container = el('job-list');
+  if(!container) return;
   let html='';
-  let dividerInserted=false;
-  list.forEach((j,i)=>{
-    if(!dividerInserted&&!j.databricksFirst&&list.some(x=>x.databricksFirst)){
+  let dividerDone=false;
+  ordered.forEach((job,i)=>{
+    if(!dividerDone && !job.databricksFirst && dbJobs.length>0){
       html+=`<div class="section-divider"><span>Other Data Engineering Roles</span></div>`;
-      dividerInserted=true;
+      dividerDone=true;
     }
-    html+=renderCard(j,i,'search');
+    html+=renderCard(job,i);
   });
-  el.innerHTML=html;
-  document.getElementById('result-count-label').textContent=list.length+' positions';
+  container.innerHTML = html;
   showResultsUI();
   updateCounts();
 }
 
-// ── Filter wiring ─────────────────────────────────────────────────────────
+// ── Filters ───────────────────────────────────────────────────────────────
 function setFilter(f,btn){
   document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
   btn.classList.add('active');
-  if(f==='all') remoteFilter='all';
-  else if(f==='remote') remoteFilter='remote';
-  else if(f==='db') remoteFilter='db';
+  remoteFilter = f;
   renderJobList();
 }
 
-// ── Save toggle ───────────────────────────────────────────────────────────
-function toggleSave(id, btn) {
-  const job = allJobs.find(j=>(j.id||j.title+j.company)===id);
+// ── Save / bookmark ───────────────────────────────────────────────────────
+function toggleSave(jobId, btn){
+  const job = allJobs.find(j=>(j.id||j.title+j.company)===jobId);
   if(!job) return;
-  const idx = savedJobs.findIndex(s=>(s.id||s.title+s.company)===id);
+  const idx = savedJobs.findIndex(s=>(s.id||s.title+s.company)===jobId);
   if(idx>=0){ savedJobs.splice(idx,1); btn.textContent='☆'; btn.classList.remove('saved'); }
   else { savedJobs.push(job); btn.textContent='🔖'; btn.classList.add('saved'); }
   localStorage.setItem('jr_saved', JSON.stringify(savedJobs));
@@ -1488,19 +966,23 @@ function toggleSave(id, btn) {
 }
 
 function updateCounts(){
-  const sc=document.getElementById('saved-count');
-  if(sc){ sc.textContent=savedJobs.length; sc.className='nav-count'+(savedJobs.length?'has-items':''); }
-  const ac=document.getElementById('app-count');
-  const apps=JSON.parse(localStorage.getItem('jr_apps')||'{}');
-  const total=Object.values(apps).flat().length;
+  const sc = el('saved-count');
+  if(sc){ sc.textContent=savedJobs.length; sc.className='nav-count'+(savedJobs.length?' has-items':''); }
+  const apps = JSON.parse(localStorage.getItem('jr_apps')||'{}');
+  const total = Object.values(apps).flat().length;
+  const ac = el('app-count');
   if(ac){ ac.textContent=total; ac.className='nav-count'+(total?' has-items':''); }
 }
 
 // ── Saved panel ───────────────────────────────────────────────────────────
 function buildSavedPanel(){
-  const el=document.getElementById('saved-list');
-  if(!savedJobs.length){ el.innerHTML='<div class="empty-panel"><div class="icon">🔖</div><p>No saved jobs yet.<br>Hit ☆ on any job card.</p></div>'; return; }
-  el.innerHTML=savedJobs.map((j,i)=>renderCard(j,i,'saved')).join('');
+  const container = el('saved-list');
+  if(!container) return;
+  if(!savedJobs.length){
+    container.innerHTML='<div class="empty-panel"><div class="icon">🔖</div><p>No saved jobs yet.<br>Hit ☆ on any job card.</p></div>';
+    return;
+  }
+  container.innerHTML = savedJobs.map((j,i)=>renderCard(j,i)).join('');
 }
 
 // ── Kanban ────────────────────────────────────────────────────────────────
@@ -1513,86 +995,90 @@ const STAGES=[
   {key:'rejected',label:'Rejected',color:'#f87171'},
 ];
 function buildKanban(){
-  const apps=JSON.parse(localStorage.getItem('jr_apps')||'{}');
-  const el=document.getElementById('kanban-board');
-  el.innerHTML=STAGES.map(s=>`
+  const apps = JSON.parse(localStorage.getItem('jr_apps')||'{}');
+  const container = el('kanban-board');
+  if(!container) return;
+  container.innerHTML = STAGES.map(s=>`
     <div class="kanban-col">
       <div class="kanban-hdr">
         <div class="dot" style="background:${s.color}"></div>
         ${s.label}
         <span style="margin-left:auto;font-size:10px;color:var(--dim)">${(apps[s.key]||[]).length}</span>
       </div>
-      ${(apps[s.key]||[]).length===0?'<div class="kanban-empty">Empty</div>':
+      ${!(apps[s.key]||[]).length ? '<div class="kanban-empty">Empty</div>' :
         (apps[s.key]||[]).map(a=>`<div class="app-card"><div class="app-title">${a.title}</div><div class="app-company">${a.company}</div></div>`).join('')}
     </div>`).join('');
 }
 
 // ── Salary panel ──────────────────────────────────────────────────────────
-const SAL_ROLES=['Senior Data Engineer','Lead Data Engineer','Staff Data Engineer',
-  'Principal Data Engineer','Data Platform Engineer','Analytics Engineer',
-  'ML Data Engineer','Data Architect','Data Engineering Manager'];
+const SAL_ROLES=['Senior Data Engineer','Lead Data Engineer','Staff Data Engineer','Principal Data Engineer',
+  'Data Platform Engineer','Analytics Engineer','ML Data Engineer','Data Architect','Data Engineering Manager'];
 
 function buildSalaryPanel(){
-  const el=document.getElementById('sal-grid');
-  if(el.innerHTML) return;
-  el.innerHTML=SAL_ROLES.map(r=>`<button class="sal-chip" onclick="lookupSalary('${r}',this)">${r}</button>`).join('');
+  const container = el('sal-grid');
+  if(!container || container.innerHTML) return;
+  container.innerHTML = SAL_ROLES.map(r=>`<button class="sal-chip" onclick="lookupSalary('${r}',this)">${r}</button>`).join('');
 }
 
 async function lookupSalary(role, btn){
+  const apiKey=localStorage.getItem('jr_api_key')||'';
+  if(!apiKey){ alert('Enter your API key first'); return; }
   document.querySelectorAll('.sal-chip').forEach(c=>c.classList.remove('active'));
   btn.classList.add('active');
-  const apiKey=localStorage.getItem('jr_api_key')||'';
-  const proxyUrl=localStorage.getItem('jr_proxy')||'';
-  if(!apiKey||!proxyUrl){alert('Enter your API key first');return;}
-  document.getElementById('sal-loading').style.display='block';
-  document.getElementById('sal-result').style.display='none';
+  const salLoad = el('sal-loading'), salRes = el('sal-result');
+  if(salLoad) salLoad.style.display='block';
+  if(salRes) salRes.style.display='none';
   try{
-    const res=await fetch(proxyUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey,model:'claude-sonnet-4-6',max_tokens:2000,system:SAL_PROMPT,messages:[{role:'user',content:`Find 2025 salary for "${role}" in Dallas TX. Search levels.fyi, Glassdoor, LinkedIn, Indeed. Return only the JSON object.`}]})});
-    const data=await res.json();
-    const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
-    const m=raw.match(/\{[\s\S]*\}/);
-    if(m){const d=JSON.parse(m[0]);renderSalary(d,role);}
-  }catch(e){alert('Error: '+e.message);}
-  document.getElementById('sal-loading').style.display='none';
-}
-
-function renderSalary(d,role){
-  const el=document.getElementById('sal-result');
-  el.style.display='block';
-  el.innerHTML=`
-    <div style="margin-bottom:4px;font-size:11px;color:var(--dim);font-weight:600">${role} · Dallas TX · 2025</div>
-    <div class="sal-num">${d.median||d.midpoint||'$150K'}</div>
-    <div class="sal-sub">${d.source||'levels.fyi · Glassdoor · LinkedIn'}</div>
-    <div class="sal-breakdown">
-      <div class="sal-cell"><div class="label">Floor</div><div class="value" style="color:var(--muted)">${d.p25||d.low||'–'}</div></div>
-      <div class="sal-cell"><div class="label">Median</div><div class="value" style="color:var(--green)">${d.median||d.midpoint||'–'}</div></div>
-      <div class="sal-cell"><div class="label">Top</div><div class="value" style="color:var(--cyan)">${d.p75||d.high||'–'}</div></div>
-    </div>
-    ${d.notes?`<div style="margin-top:12px;font-size:11px;color:var(--muted);line-height:1.6">${d.notes}</div>`:''}
-  `;
+    const res = await fetch(PROXY, {method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({apiKey,model:'claude-sonnet-4-6',max_tokens:2000,system:SAL_PROMPT,
+        messages:[{role:'user',content:`Find 2025 salary for "${role}" in Dallas TX. Return JSON object.`}]})
+    });
+    const data = await res.json();
+    const raw = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const m = raw.match(/\{[\s\S]*\}/);
+    if(m){
+      const d = JSON.parse(m[0]);
+      if(salRes){
+        salRes.style.display='block';
+        salRes.innerHTML=`
+          <div style="font-size:11px;color:var(--dim);font-weight:600;margin-bottom:4px">${role} · Dallas TX · 2025</div>
+          <div class="sal-num">${d.median||d.midpoint||'$150K'}</div>
+          <div class="sal-sub">${d.source||'Glassdoor · LinkedIn · levels.fyi'}</div>
+          <div class="sal-breakdown">
+            <div class="sal-cell"><div class="label">Floor</div><div class="value" style="color:var(--muted)">${d.p25||d.low||'–'}</div></div>
+            <div class="sal-cell"><div class="label">Median</div><div class="value" style="color:var(--green)">${d.median||d.midpoint||'–'}</div></div>
+            <div class="sal-cell"><div class="label">Top</div><div class="value" style="color:var(--cyan)">${d.p75||d.high||'–'}</div></div>
+          </div>
+          ${d.notes?`<div style="margin-top:12px;font-size:11px;color:var(--muted);line-height:1.6">${d.notes}</div>`:''}`;
+      }
+    }
+  }catch(e){ alert('Error: '+e.message); }
+  if(salLoad) salLoad.style.display='none';
 }
 
 // ── Companies panel ───────────────────────────────────────────────────────
 function buildCompaniesPanel(){
-  const el=document.getElementById('co-list');
-  if(el.innerHTML) return;
-  const filters=document.getElementById('co-filters');
-  const cats=[['all','All'],['aidata','AI/Data'],['fintech','Fintech'],['healthcare','Healthcare'],['dallas','Dallas Area'],['bigtech','Big Tech'],['fast','⚡ Fast Response']];
-  filters.innerHTML=cats.map(([k,l])=>`<button class="filter-chip${k==='all'?' active':''}" onclick="filterCo('${k}',this)">${l}</button>`).join('');
+  const container = el('co-list');
+  if(!container || container.innerHTML) return;
+  const filters = el('co-filters');
+  const cats=[['all','All'],['aidata','AI/Data'],['fintech','Fintech'],['healthcare','Healthcare'],['dallas','Dallas Area'],['bigtech','Big Tech'],['fast','⚡ Fast']];
+  if(filters) filters.innerHTML = cats.map(([k,l])=>`<button class="filter-chip${k==='all'?' active':''}" onclick="filterCo('${k}',this)">${l}</button>`).join('');
   renderCo('all');
 }
 
-let coFilter='all';
 function filterCo(f,btn){
-  coFilter=f;
   document.querySelectorAll('#co-filters .filter-chip').forEach(c=>c.classList.remove('active'));
   btn.classList.add('active');
   renderCo(f);
 }
+
 function renderCo(f){
-  const el=document.getElementById('co-list');
-  const list=f==='all'?COMPANIES:f==='remote'?COMPANIES.filter(c=>c.remote):f==='fast'?COMPANIES.filter(c=>c.responseSpeed&&(c.responseSpeed.startsWith('⚡⚡⚡')||c.responseSpeed.startsWith('⚡⚡'))):COMPANIES.filter(c=>c.cat===f);
-  el.innerHTML=list.map(co=>`
+  const container = el('co-list');
+  if(!container) return;
+  const list = f==='all' ? COMPANIES :
+    f==='fast' ? COMPANIES.filter(c=>c.responseSpeed&&(c.responseSpeed.includes('⚡⚡⚡')||c.responseSpeed.includes('⚡⚡'))) :
+    COMPANIES.filter(c=>c.cat===f);
+  container.innerHTML = list.map(co=>`
     <div class="co-card">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
         <div class="co-name">${co.name}</div>
@@ -1603,72 +1089,70 @@ function renderCo(f){
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <span style="font-size:12px;font-weight:700;color:var(--text)">${co.salary||''}</span>
         ${co.h1b?`<span style="font-size:10px;color:var(--muted)">${co.h1b}</span>`:''}
-        ${co.size?`<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:var(--raised);color:var(--muted)">${co.size}</span>`:''}
-        <a href="https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(co.linkedin)}&f_JT=F&f_TPR=r2592000" target="_blank" class="co-link" style="margin-left:auto">View Jobs →</a>
+        <a href="https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(co.linkedin||co.name)}&f_JT=F&f_TPR=r2592000" target="_blank" class="co-link" style="margin-left:auto">View Jobs →</a>
       </div>
     </div>`).join('');
 }
 
-// ── Job Boards panel ──────────────────────────────────────────────────────
+// ── Job boards panel ──────────────────────────────────────────────────────
 function buildBoardsPanel(){
-  const el=document.getElementById('boards-content');
-  if(el.innerHTML) return;
+  const container = el('boards-content');
+  if(!container || container.innerHTML) return;
   const remote=[
-    [1,"Wellfound","https://wellfound.com/jobs/data-engineer?remote=true&visa=true","Best for funded AI/data startups"],
+    [1,"Wellfound","https://wellfound.com/jobs/data-engineer?remote=true","Best for AI/data startups with equity"],
     [2,"Arc.dev","https://arc.dev/remote-jobs/data-engineer","Vetted remote engineers"],
     [3,"Built In Remote","https://builtin.com/jobs/remote?search=data+engineer","Tech-focused, visa filter"],
-    [4,"DailyRemote","https://dailyremote.com/remote-data-engineer-jobs","Daily curated remote jobs"],
-    [5,"FlexJobs","https://flexjobs.com/search?search=data+engineer&location=Remote","Screened, no scams"],
-    [6,"HN Who's Hiring","https://hnhiring.com/?technologies=python,spark&locations=remote","Top YC-backed startups"],
-    [7,"Himalayas","https://himalayas.app/jobs/data-engineer?remote=true","Clean UI, great filters"],
-    [8,"JustRemote","https://justremote.co/remote-developer-jobs?title=data+engineer","Remote-only board"],
-    [9,"Remote OK","https://remoteok.com/remote-data-engineer-jobs","High volume, tech-focused"],
-    [10,"Remotive","https://remotive.com/remote-jobs/software-dev?search=data+engineer","Curated, updated daily"],
-    [11,"We Work Remotely","https://weworkremotely.com/remote-jobs/search?term=data+engineer","Largest remote-only board"],
-    [12,"Wellfound","https://wellfound.com/jobs/data-engineer","Startup equity roles"],
-    [13,"Working Nomads","https://workingnomads.com/remote-data-engineer-jobs","Curated remote jobs"],
-    [14,"Otta / Welcome to Jungle","https://www.welcometothejungle.com/en/jobs?occupation_category=data&remote=true","EU origin, strong US startups"],
-    [15,"Toptal","https://www.toptal.com/data-engineers","Top 3% talent, premium"],
-    [16,"Turing","https://www.turing.com/jobs/data-engineer","AI-matched remote roles"],
-    [17,"NoDesk","https://nodesk.co/remote-jobs/data-engineer/","750+ remote companies"],
-    [18,"RemoteHub","https://remotehub.com/jobs?q=data+engineer","Community + jobs"],
-    [19,"WFH.io","https://www.wfh.io/search?q=data+engineer","WFH focused board"],
-    [20,"Virtual Vocations","https://virtualvocations.com/jobs/q-data-engineer/","Telecommute specialists"],
-    [21,"Hubstaff Talent","https://talent.hubstaff.com/search/jobs?q=data+engineer","Direct contact hiring"],
-    [22,"Pangian","https://pangian.com/job-travel-remote/?s=data+engineer","Global remote, visa-open"],
-    [23,"Remote.co","https://remote.co/remote-jobs/search/?search_keywords=data+engineer","Curated quality jobs"],
-    [24,"SkipTheDrive","https://www.skipthedrive.com/jobs/?q=data+engineer","Less known = less competition"],
-    [25,"Landing.jobs","https://landing.jobs/jobs?remote=true&q=data+engineer","Strong US remote listings"],
+    [4,"HN Who's Hiring","https://hnhiring.com/?technologies=python,spark&locations=remote","YC-backed startups"],
+    [5,"Himalayas","https://himalayas.app/jobs/data-engineer?remote=true","Clean UI, great filters"],
+    [6,"Remote OK","https://remoteok.com/remote-data-engineer-jobs","High volume, tech-focused"],
+    [7,"Remotive","https://remotive.com/remote-jobs/software-dev?search=data+engineer","Curated, updated daily"],
+    [8,"We Work Remotely","https://weworkremotely.com/remote-jobs/search?term=data+engineer","Largest remote-only"],
+    [9,"Working Nomads","https://workingnomads.com/remote-data-engineer-jobs","Curated remote jobs"],
+    [10,"Otta","https://www.welcometothejungle.com/en/jobs?occupation_category=data&remote=true","Strong US startups"],
+    [11,"Toptal","https://www.toptal.com/data-engineers","Top 3% talent"],
+    [12,"Turing","https://www.turing.com/jobs/data-engineer","AI-matched remote"],
+    [13,"NoDesk","https://nodesk.co/remote-jobs/data-engineer/","750+ remote companies"],
+    [14,"Remote.co","https://remote.co/remote-jobs/search/?search_keywords=data+engineer","Curated quality"],
+    [15,"Pangian","https://pangian.com/job-travel-remote/?s=data+engineer","Global, visa-open"],
+    [16,"FlexJobs","https://flexjobs.com/search?search=data+engineer&location=Remote","Screened, no scams"],
+    [17,"DailyRemote","https://dailyremote.com/remote-data-engineer-jobs","Daily curated"],
+    [18,"JustRemote","https://justremote.co/remote-developer-jobs?title=data+engineer","Remote-only"],
+    [19,"Landing.jobs","https://landing.jobs/jobs?remote=true&q=data+engineer","Strong US remote"],
+    [20,"SkipTheDrive","https://www.skipthedrive.com/jobs/?q=data+engineer","Less competition"],
+    [21,"VirtualVocations","https://virtualvocations.com/jobs/q-data-engineer/","Telecommute specialists"],
+    [22,"Hubstaff Talent","https://talent.hubstaff.com/search/jobs?q=data+engineer","Direct contact"],
+    [23,"WFH.io","https://www.wfh.io/search?q=data+engineer","WFH focused"],
+    [24,"RemoteHub","https://remotehub.com/jobs?q=data+engineer","Community + jobs"],
+    [25,"Outsourcely","https://www.outsourcely.com/remote-data-engineer-jobs","Long-term remote focus"],
   ];
   const h1b=[
-    [1,"Dice.com","https://www.dice.com/jobs?q=data+engineer+AI&location=Dallas+TX&radius=25&employment=FULLTIME&visa=H1B_Visa","Best tech board, H1B filter built in"],
-    [2,"H1BConnect","https://www.h1b-connect.com/jobs?category=data-engineer","6000+ jobs with sponsor data"],
+    [1,"Dice.com","https://www.dice.com/jobs?q=data+engineer&location=Dallas+TX&radius=50&visa=H1B_Visa","Best tech board, H1B filter built in"],
+    [2,"H1BConnect","https://www.h1b-connect.com/jobs?category=data-engineer","6000+ with sponsor data"],
     [3,"MyVisaJobs","https://www.myvisajobs.com/Search_Visa_Sponsor.aspx?T=JT&K=data+engineer","Indexes DOL LCA data"],
-    [4,"H1B Grader","https://h1bgrader.com/search?q=data+engineer","Company approval/denial rates"],
+    [4,"H1B Grader","https://h1bgrader.com/search?q=data+engineer","Approval/denial rates"],
     [5,"H1B Data Hub","https://h1bdatahub.com/search?query=data+engineer","Real DOL LCA salary data"],
     [6,"Jobright.ai","https://jobright.ai/jobs/data-engineer?visa=h1b","AI-matched H1B jobs"],
     [7,"ImmiHelp Jobs","https://immihelp.com/jobs/search/?q=data+engineer&l=Dallas","H1B focused, less competition"],
   ];
   const main=[
-    [1,"LinkedIn Jobs","https://www.linkedin.com/jobs/search/?keywords=data+engineer+AI&location=Dallas%2C+TX&f_JT=F&f_TPR=r2592000","#1 for data engineering"],
-    [2,"Indeed","https://www.indeed.com/jobs?q=data+engineer+AI+H1B+sponsorship&l=Dallas%2C+TX&jt=fulltime","Highest volume"],
-    [3,"Glassdoor","https://www.glassdoor.com/Job/jobs.htm?sc.keyword=data+engineer+AI&locT=C&locId=1139977","Salary data + reviews"],
-    [4,"ZipRecruiter","https://www.ziprecruiter.com/jobs-search?search=data+engineer+H1B&location=Dallas%2C+TX&employment_type=full_time","Good Dallas volume"],
-    [5,"Levels.fyi Jobs","https://www.levels.fyi/jobs?title=Data+Engineer&location=Dallas","FAANG-level salary transparency"],
-    [6,"Y Combinator Jobs","https://www.ycombinator.com/jobs/role/data-engineer/remote","All YC-backed startups"],
+    [1,"LinkedIn Jobs","https://www.linkedin.com/jobs/search/?keywords=data+engineer&location=Dallas%2C+TX&f_JT=F&f_TPR=r2592000","#1 for data engineering"],
+    [2,"Indeed","https://www.indeed.com/jobs?q=data+engineer+H1B+sponsorship&l=Dallas%2C+TX&jt=fulltime","Highest volume"],
+    [3,"Glassdoor","https://www.glassdoor.com/Job/jobs.htm?sc.keyword=data+engineer&locT=C&locId=1139977","Salary + reviews"],
+    [4,"ZipRecruiter","https://www.ziprecruiter.com/jobs-search?search=data+engineer+H1B&location=Dallas%2C+TX","Good Dallas volume"],
+    [5,"Levels.fyi Jobs","https://www.levels.fyi/jobs?title=Data+Engineer&location=Dallas","FAANG salary transparency"],
+    [6,"Y Combinator","https://www.ycombinator.com/jobs/role/data-engineer/remote","All YC startups"],
     [7,"Greenhouse ATS","https://boards.greenhouse.io/search#t=jobs&q=data+engineer","Top startup ATS"],
-    [8,"Lever ATS","https://jobs.lever.co/search?q=data+engineer","Confluent, dbt Labs, Fivetran"],
-    [9,"Simplyhired","https://www.simplyhired.com/search?q=data+engineer+H1B&l=Dallas%2C+TX","Catches missed listings"],
-    [10,"AngelList Jobs","https://wellfound.com/jobs","Startup funding transparency"],
+    [8,"Lever ATS","https://jobs.lever.co/search?q=data+engineer","dbt Labs, Confluent, Fivetran"],
+    [9,"Simplyhired","https://www.simplyhired.com/search?q=data+engineer&l=Dallas%2C+TX","Catches missed listings"],
+    [10,"AngelList","https://wellfound.com/jobs","Startup funding transparency"],
   ];
-  const mkCards=(boards,type)=>boards.map(([n,name,url,desc])=>`
+  const mkCards = (boards,type) => boards.map(([n,name,url,desc])=>`
     <a href="${url}" target="_blank" class="board-card ${type}-type">
       <div class="board-num">#${String(n).padStart(2,'0')}</div>
       <div class="board-name">${name}</div>
       <div class="board-desc">${desc}</div>
-      <div class="board-url">${url.replace('https://','').split('/')[0]}</div>
     </a>`).join('');
-  el.innerHTML=`
+  container.innerHTML = `
     <div class="board-section-label">🌐 Remote-First Boards (25)</div>
     <div class="board-grid">${mkCards(remote,'remote')}</div>
     <div class="board-section-label">🛂 H1B-Specific Boards (7)</div>
@@ -1677,96 +1161,365 @@ function buildBoardsPanel(){
     <div class="board-grid">${mkCards(main,'main')}</div>`;
 }
 
-// ── runSearch override for new layout ─────────────────────────────────────
-const _origRunSearch = runSearch;
-const origRunSearch = async function(forceRefresh=false){
-  const apiKey=localStorage.getItem('jr_api_key')||'';
-  if(!apiKey){alert('Please enter your Anthropic API key in the bar above.');return;}
-  const proxyUrl=localStorage.getItem('jr_proxy')||'';
-  if(!proxyUrl){alert('Proxy URL missing.');return;}
+// ── Main search ───────────────────────────────────────────────────────────
+async function runSearch(forceRefresh=false){
+  console.log('runSearch called, mode='+currentMode+', forceRefresh='+forceRefresh);
+  const apiKey = localStorage.getItem('jr_api_key')||'';
+  if(!apiKey){
+    const eb=el('err-bar');
+    if(eb){eb.textContent='⚠️ No API key found — paste your sk-ant-api03-... key in the field above';eb.style.display='block';}
+    return;
+  }
+  console.log('API key found, length='+apiKey.length);
 
+  // Serve from cache if valid
   if(!forceRefresh){
-    const cached=getCache(currentMode);
-    if(cached&&cached.length){
-      allJobs=cached;
+    const cached = getCache(currentMode);
+    if(cached && cached.length){
+      allJobs = cached;
       renderJobList();
-      const age=getCacheAge(currentMode);
-      showCacheBar(age);
+      showCacheBar(getCacheAge(currentMode));
       return;
     }
   }
-  const cb=document.getElementById('cache-bar');
-  if(cb) cb.style.display='none';
-  document.getElementById('search-hero').style.display='none';
-  document.getElementById('scan-bar').style.display='block';
-  const btn=document.getElementById('find-btn');
-  if(btn){btn.disabled=true;btn.textContent='Searching...';}
+
+  hide('cache-bar'); hide('new-positions-bar'); hide('search-hero');
+  const sb = el('scan-bar'); if(sb) sb.style.display='block';
+  const btn = el('find-btn');
+  if(btn){ btn.disabled=true; btn.textContent='Searching…'; }
+
+  const steps = (SCAN_STEPS[currentMode]||SCAN_STEPS.de);
   let si=0;
-  const steps=SCAN_STEPS[currentMode]||SCAN_STEPS.de;
-  const sint=setInterval(()=>{si=(si+1)%steps.length;const s=steps[si];document.getElementById('scan-src').textContent=s.icon+' '+s.src;},2200);
+  const sint = setInterval(()=>{
+    si=(si+1)%steps.length;
+    const scanSrc = el('scan-src');
+    if(scanSrc) scanSrc.textContent=steps[si].icon+' '+steps[si].src;
+  },2200);
+
+  const MSG = {
+    de:'Generate 12 full-time H1B-friendly Data Engineer jobs for DFW 50-mile radius (Dallas, Fort Worth, Westlake, Plano, Frisco, Irving, Richardson, Addison, Carrollton, McKinney, Allen, Arlington, Southlake, Grapevine, Lewisville, Flower Mound, Denton, Grand Prairie, Mansfield, Keller, Coppell, The Colony, Garland) plus Remote 2025. Include roles titled Software Engineer, Platform Engineer, Backend Engineer, Analytics Engineer, Staff Engineer, Engineer II/III where responsibilities are data engineering. Skills: Databricks, PySpark, Delta Lake, Snowflake, dbt, Kafka, ADF, BigQuery. Companies: AT&T, JPMorgan Plano, Microsoft, Databricks, Humana, McKesson, Fidelity Westlake, American Airlines Fort Worth, Toyota Connected, Celanese, Deloitte, Accenture, Cognizant, TCS. applyUrl: linkedin.com/company/[slug]/jobs/ format. Return JSON array only.',
+    ai:'Generate 12 full-time H1B-friendly AI Data Engineer jobs for DFW 50-mile radius plus Remote 2025. Include ML Engineer, MLOps Engineer, Platform Engineer, Staff Engineer roles where responsibilities involve ML data pipelines, LLM, or Databricks AI. Skills: MLflow, Databricks AI, LLM pipelines, RAG, Vector DB, Azure OpenAI, Spark ML. Companies: Databricks, Snowflake, Komodo Health, Tempus AI, Innovaccer, Microsoft Azure AI, Amazon AI, Weights & Biases, Scale AI, Cohere, Anyscale. applyUrl: linkedin.com/company/[slug]/jobs/ format. Set hasEquity:true for startups. Return JSON array only.',
+    ct:'Generate 12 C2C and C2H Data Engineer jobs for DFW 50-mile radius plus Remote 2025. C2C=$85-120/hr own LLC. C2H=$75-100/hr converts to full-time H1B friendly. Skills: Databricks, PySpark, Delta Lake, Python, SQL. Companies: AT&T, JPMorgan Plano, Humana, Capital One, Toyota Connected, Celanese, Deloitte, Accenture, Fidelity Westlake, American Airlines Fort Worth. Include hourlyRate, contractType (C2C or C2H), duration. applyUrl: dice.com or linkedin.com/company/[slug]/jobs/. Return JSON array only.'
+  };
 
   try{
-    const userMsg=
-      currentMode==='de'?'Generate 12 full-time H1B-friendly Data Engineer jobs for DFW 50-mile radius (Dallas, Fort Worth, Westlake, Plano, Frisco, Irving, Richardson, Addison, Carrollton, McKinney, Allen, Arlington, Southlake, Grapevine, Lewisville, Flower Mound, Denton, Grand Prairie, Mansfield, Keller, Coppell, The Colony, Garland) plus Remote 2025. Search by SKILLS not title. Include roles titled Software Engineer, Platform Engineer, Backend Engineer, Analytics Engineer, Staff Engineer where responsibilities match data engineering. Skills: Databricks, PySpark, Delta Lake, Snowflake, dbt, Kafka, ADF, BigQuery. Companies: AT&T, JPMorgan Plano, Microsoft, Amazon, Databricks, Humana, McKesson, Fidelity Investments Westlake, American Airlines Fort Worth, Toyota Connected, Celanese, Deloitte, Accenture, Cognizant, TCS. applyUrl: linkedin.com/company/[slug]/jobs/ format. Return JSON array only.'
-      :currentMode==='ai'?'Generate 12 full-time H1B-friendly AI Data Engineer jobs for DFW 50-mile radius plus Remote 2025. Include roles titled ML Engineer, MLOps Engineer, Platform Engineer, Staff Engineer where responsibilities involve ML data pipelines, LLM, or Databricks AI. Skills: MLflow, Databricks AI, LLM pipelines, RAG, Vector DB, Azure OpenAI, Spark ML. Companies: Databricks, Snowflake, Komodo Health, Tempus AI, Innovaccer, Microsoft Azure AI, Amazon AI, Weights & Biases, Scale AI, Cohere, Anyscale, Arize AI. applyUrl: linkedin.com/company/[slug]/jobs/ format. Set hasEquity:true for startups. Return JSON array only.'
-      :'Generate 12 C2C and C2H Data Engineer jobs for DFW 50-mile radius (Dallas, Fort Worth, Westlake, Plano, Frisco, Irving, Arlington) plus Remote 2025. C2C = Corp-to-Corp $85-120/hr own LLC. C2H = Contract-to-Hire $75-100/hr → full-time H1B friendly on conversion. Skills: Databricks, PySpark, Delta Lake, Python, SQL. Companies: AT&T, JPMorgan Plano, Humana, Capital One, Toyota Connected, Celanese, Deloitte, Accenture, Fidelity Westlake, American Airlines. Include hourlyRate, contractType (C2C or C2H), duration. applyUrl: dice.com or linkedin.com/company/[slug]/jobs/. Return JSON array only.';
-    const res=await fetch(proxyUrl,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({apiKey,model:'claude-sonnet-4-6',max_tokens:6000,system:PROMPTS[currentMode],messages:[{role:'user',content:userMsg}]})});
+    const res = await fetch(PROXY, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({apiKey, model:'claude-sonnet-4-6', max_tokens:6000,
+        system:PROMPTS[currentMode], messages:[{role:'user',content:MSG[currentMode]}]})
+    });
     clearInterval(sint);
-    if(!res.ok){const t=await res.text();throw new Error('Error '+res.status+': '+t.slice(0,200));}
-    const data=await res.json();
-    const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
-    const jsonStart=raw.indexOf('['),jsonEnd=raw.lastIndexOf(']');
-    const jsonStr=(jsonStart>=0&&jsonEnd>jsonStart)?raw.slice(jsonStart,jsonEnd+1):null;
-    const m=jsonStr?[jsonStr]:raw.match(/\[[\s\S]*\]/);
-    if(m){try{
-      const a=JSON.parse(m[0]);
-      if(Array.isArray(a)&&a.length){
-        const sorted=a.sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
-        const existing=getCache(currentMode)||[];
-        const existingKeys=new Set(existing.map(j=>(j.company+'|'+j.title).toLowerCase()));
-        const newPos=sorted.filter(j=>!existingKeys.has((j.company+'|'+j.title).toLowerCase()));
-        allJobs=sorted;
-        setCache(currentMode,allJobs);
-        renderJobList();
-        if(newPos.length>0&&existing.length>0){
-          const nb=document.getElementById('new-positions-bar');
-          if(nb){nb.textContent='✨ '+newPos.length+' new position'+(newPos.length>1?'s':'')+' since last check';nb.style.display='block';}
+    if(!res.ok){ const t=await res.text(); throw new Error('Error '+res.status+': '+t.slice(0,200)); }
+    const data = await res.json();
+    const raw = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const js = raw.indexOf('['); const je = raw.lastIndexOf(']');
+    const jsonStr = (js>=0&&je>js) ? raw.slice(js,je+1) : null;
+    const m = jsonStr ? [jsonStr] : raw.match(/\[[\s\S]*\]/);
+    if(m){
+      try{
+        const arr = JSON.parse(m[0]);
+        if(Array.isArray(arr)&&arr.length){
+          const sorted = arr.sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
+          const existing = getCache(currentMode)||[];
+          const existKeys = new Set(existing.map(j=>(j.company+'|'+j.title).toLowerCase()));
+          const newPos = sorted.filter(j=>!existKeys.has((j.company+'|'+j.title).toLowerCase()));
+          allJobs = sorted;
+          setCache(currentMode, allJobs);
+          renderJobList();
+          if(newPos.length>0&&existing.length>0){
+            const nb=el('new-positions-bar');
+            if(nb){nb.textContent='✨ '+newPos.length+' new position'+(newPos.length>1?'s':'')+' found'; nb.style.display='block';}
+          }
         }
-      }
-    }catch(e2){throw new Error('Parse error: '+e2.message);}}
-    if(!allJobs.length)throw new Error('No jobs returned. Response: '+raw.slice(0,150));
+      }catch(e2){ throw new Error('Parse error: '+e2.message); }
+    }
+    if(!allJobs.length) throw new Error('No jobs in response. Try again.');
   }catch(e){
     clearInterval(sint);
-    document.getElementById('scan-bar').style.display='none';
-    document.getElementById('search-hero').style.display='block';
-    alert('⚠️ '+e.message);
+    if(sb) sb.style.display='none';
+    if(el('search-hero')) el('search-hero').style.display='block';
+    const eb=el('err-bar');
+    if(eb){eb.textContent='⚠️ '+e.message;eb.style.display='block';setTimeout(()=>eb.style.display='none',8000);}
+    console.error('JobRadar error:',e);
   }finally{
     clearInterval(sint);
-    document.getElementById('scan-bar').style.display='none';
-    if(btn){btn.disabled=false;btn.textContent='Find Jobs';}
+    if(sb) sb.style.display='none';
+    if(btn){ btn.disabled=false; btn.textContent='Find Jobs'; }
   }
-};
-// Replace runSearch globally
-window.runSearch=origRunSearch;
+}
+
+// ── Resume tailor constants ───────────────────────────────────────────────
+const BASE_RESUME = `NIKHIL BOORLA | Senior/Lead Data Engineer | Dallas TX | H1B valid Jul 2027
+nikhil.h725@gmail.com | (470) 515-7342 | linkedin.com/in/nikhil-boorla
+
+SUMMARY: 13+ years designing production-grade ETL/ELT pipelines on Azure Databricks, PySpark, Delta Lake. Expert in Medallion Architecture (Bronze→Silver→Gold), DLT, Auto Loader, Unity Catalog, Structured Streaming, Cluster Policies, MLflow. Multi-cloud: Azure (ADF, ADLS Gen2, Synapse, EventHub, Key Vault, Purview, Fabric), AWS (S3, Glue, EMR, Redshift, Lake Formation), GCP (BigQuery, Dataflow). Snowflake, Snowpark, dbt, Kafka, Airflow. Microsoft DP-600 certified. Agile/SAFe.
+
+HUMANA (Contract via NTT DATA) | Senior Data Engineer | Nov 2025–Present | Dallas TX Remote
+Acadia Claims Data Lake — Databricks on AWS, PySpark, Delta Lake, S3, Amazon Kinesis
+• ETL/ELT pipelines for 837 EDI healthcare claims through Medallion Architecture supporting payments analytics
+• DLT + Auto Loader for incremental S3 ingestion; data quality expectations; reduced bad records 35%
+• Databricks Workflows/Jobs API — 20+ daily jobs across dev/SIT/prod
+• Unity Catalog governance + AWS Lake Formation; HIPAA claims data; data lineage tracking
+• Structured Streaming from Amazon Kinesis into Delta Lake with watermarking
+• Fixed 31M-record silent data loss — Spark lazy evaluation bug; persist()+df.count() fix
+• Spark performance tuning: broadcast joins, partition pruning, coalesce — 40% shuffle reduction
+• Acadia EFT file generation pipeline (fixed-length claims payment files, daily 10AM via Databricks Workflows)
+• HMFTP integration for Oracle treasury team; resolved SFTP timeout errors
+• Trace ID matching pipeline — ADLS shared dir; PySpark match + status + notification flags
+• CI/CD via AWS CodePipeline + GitHub; secrets in AWS Secrets Manager
+
+CAPITAL ONE (Contract) | Lead Data Engineer | Feb–Nov 2025 | Plano TX
+OneTag Management — Databricks, Snowflake, Snowpark, dbt, ADF, Azure DevOps
+• PySpark + Auto Loader ingestion pipelines — 30% throughput improvement
+• Snowpark Python transformation pipelines — 50% data movement reduction
+• Reusable Python ingestion framework used by 5 product teams
+• dbt models (staging→intermediate→mart) with full test coverage
+• CI/CD via Azure DevOps — 60% faster release cycles; ADF orchestration
+
+BIOMERIEUX (Contract) | Senior Data Engineer | Sep 2024–Jan 2025 | Dallas TX
+• Microsoft Fabric + Snowflake healthcare diagnostic data platform; Azure EventHub real-time telemetry
+• Azure Data Share; Cosmos DB tuning; ARM template IaC; 20% cost reduction
+
+REPUTATION | Senior Data Engineer | Jan 2020–Jul 2024 | Remote
+• Designed Medallion Architecture on Azure Databricks for Fortune 500 SaaS platform from scratch
+• PySpark/Scala + Delta Lake; Kafka+EventHub Spark Streaming; ADF batch pipelines
+• Power BI dashboards for 50+ stakeholders; 30% compute cost reduction
+
+VALEO | Data Engineer | Jun 2016–Jan 2020 | Dallas TX
+• AWS migration (SQL Server DWH → AWS Glue + EMR → Redshift); 10M+ records/day; 200+ reports migrated
+
+CATERPILLAR | ETL Developer | Oct 2013–Feb 2016 | Dallas TX
+• 50+ pipelines migrated to AWS Glue + EMR → Redshift; 40% maintenance reduction
+
+DISCOVER FINANCIAL | ETL Developer | Oct 2012–Sep 2013 | Chicago IL
+• Informatica PowerCenter financial DWH; achievement award
+
+EDUCATION: MS Computer Science, Silicon Valley University CA (GPA 3.67) | BTech CS, JNTU India (GPA 3.2)
+CERT: Microsoft DP-600 — Fabric Analytics Engineer`;
+const STATUS_LABELS = ['Applied','Phone Screen','Interview','Final Round','Offer','Rejected'];
+const STATUS_COLORS = {'Applied':'#22d3ee','Phone Screen':'#fbbf24','Interview':'#a78bfa','Final Round':'#34d399','Offer':'#4ade80','Rejected':'#f87171'};
+let currentTailorJob = null;
+let tailoredContent = null;
+
+// ── Status tracker ────────────────────────────────────────────────────────
+function getStatus(jobId){ return localStorage.getItem('jr_status_'+jobId)||''; }
+function setStatus(jobId, status){
+  if(status) localStorage.setItem('jr_status_'+jobId, status);
+  else localStorage.removeItem('jr_status_'+jobId);
+  // Re-render the status badge on the card
+  const badge = document.querySelector(`[data-status-id="${jobId}"]`);
+  if(badge){
+    if(status){
+      badge.textContent=status;
+      badge.style.background=STATUS_COLORS[status]||'#27272a';
+      badge.style.color='#000';
+    } else {
+      badge.textContent='Track';
+      badge.style.background='transparent';
+      badge.style.color='#71717a';
+    }
+  }
+  updateKanban();
+}
+function cycleStatus(jobId, btn){
+  const cur = getStatus(jobId);
+  const idx = STATUS_LABELS.indexOf(cur);
+  const next = idx >= STATUS_LABELS.length-1 ? '' : STATUS_LABELS[idx+1] || STATUS_LABELS[0];
+  setStatus(jobId, next);
+}
+function updateKanban(){
+  if(document.getElementById('panel-tracker') && document.getElementById('panel-tracker').classList.contains('active')){
+    buildKanban();
+  }
+  updateCounts();
+}
+
+// ── Open tailor drawer ────────────────────────────────────────────────────
+function openTailor(jobId){
+  const job = [...allJobs, ...savedJobs].find(j=>(j.id||j.title+j.company)===jobId);
+  if(!job) return;
+  currentTailorJob = job;
+  tailoredContent = null;
+  // Set job meta
+  const meta = document.getElementById('tailor-job-meta');
+  if(meta) meta.textContent = job.title+' · '+job.company+(job.location?' · '+job.location:'');
+  // Pre-fill JD with tags
+  const jdInput = document.getElementById('tailor-jd');
+  if(jdInput) jdInput.value = (job.tags||[]).length ? 'Skills required: '+(job.tags||[]).join(', ')+'\n\nRole at '+job.company+': '+job.title+'\nLocation: '+job.location : '';
+  // Build status buttons
+  buildStatusBtns(jobId);
+  // Reset UI
+  document.getElementById('tailor-progress').style.display='none';
+  document.getElementById('tailor-result').style.display='none';
+  document.getElementById('gen-btn').style.display='block';
+  // Show
+  document.getElementById('tailor-overlay').style.display='block';
+  document.getElementById('tailor-drawer').style.display='flex';
+}
+function closeTailor(){
+  document.getElementById('tailor-overlay').style.display='none';
+  document.getElementById('tailor-drawer').style.display='none';
+}
+function buildStatusBtns(jobId){
+  const cur = getStatus(jobId);
+  const container = document.getElementById('status-btns');
+  if(!container) return;
+  container.innerHTML = STATUS_LABELS.map(s => `
+    <button onclick="setStatus('${jobId}','${s}')" style="padding:5px 12px;border-radius:20px;border:1px solid ${s===cur?STATUS_COLORS[s]||'#27272a':'#27272a'};background:${s===cur?(STATUS_COLORS[s]||'#27272a'):'transparent'};color:${s===cur?'#000':'#71717a'};font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s"
+      onmouseover="this.style.borderColor='${STATUS_COLORS[s]||'#27272a'}'" onmouseout="this.style.borderColor='${s===cur?STATUS_COLORS[s]||'#27272a':'#27272a'}'">
+      ${s}
+    </button>`).join('');
+}
+
+// ── Generate tailored resume ──────────────────────────────────────────────
+async function generateTailored(){
+  const apiKey = localStorage.getItem('jr_api_key')||'';
+  if(!apiKey){ alert('Enter your API key first.'); return; }
+  const jd = document.getElementById('tailor-jd').value.trim();
+  const job = currentTailorJob;
+  document.getElementById('gen-btn').style.display='none';
+  document.getElementById('tailor-progress').style.display='block';
+  document.getElementById('tailor-result').style.display='none';
+  const steps=['Analyzing job description…','Matching your skills…','Rewriting bullets…','Building tailored resume…','Almost done…'];
+  let si=0;
+  const sint=setInterval(()=>{si=(si+1)%steps.length;const s=document.getElementById('tailor-step');if(s)s.textContent=steps[si];},3000);
+  try{
+    const prompt = `You are a resume expert. Tailor Nikhil Boorla's resume for this job and return ONLY a JSON object.
+
+JOB: ${job.title} at ${job.company} (${job.location||'Dallas TX'})
+${jd?'JOB DESCRIPTION:\n'+jd:''}
+TAGS/SKILLS REQUIRED: ${(job.tags||[]).join(', ')}
+
+NIKHIL'S BASE RESUME:
+${BASE_RESUME}
+
+Return ONLY this JSON (no markdown, no text before/after):
+{"atsScore":85,"matchedKeywords":["Databricks","PySpark","Delta Lake"],"missingKeywords":["Terraform","Kubernetes"],"summary":"2-3 sentence tailored professional summary using JD language","humanaBullets":["bullet 1 rewritten with JD keywords","bullet 2","bullet 3","bullet 4","bullet 5"],"capitalOneBullets":["bullet 1","bullet 2","bullet 3","bullet 4"],"reputationBullets":["bullet 1","bullet 2"]}`;
+    const res = await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({apiKey,model:'claude-sonnet-4-6',max_tokens:3000,
+        messages:[{role:'user',content:prompt}]})
+    });
+    clearInterval(sint);
+    const data = await res.json();
+    const raw = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const js=raw.indexOf('{'); const je=raw.lastIndexOf('}');
+    if(js>=0&&je>js){
+      tailoredContent = JSON.parse(raw.slice(js,je+1));
+      renderTailorResult(tailoredContent, job);
+    } else throw new Error('Could not parse response');
+  }catch(e){
+    clearInterval(sint);
+    document.getElementById('gen-btn').style.display='block';
+    alert('Error: '+e.message);
+  }
+  clearInterval(sint);
+  document.getElementById('tailor-progress').style.display='none';
+}
+
+function renderTailorResult(d, job){
+  const score = d.atsScore||80;
+  const atsEl=document.getElementById('tr-ats');
+  const atsLbl=document.getElementById('tr-ats-label');
+  if(atsEl){ atsEl.textContent=score+'%'; atsEl.style.color=score>=85?'#4ade80':score>=70?'#fbbf24':'#f87171'; }
+  if(atsLbl){ atsLbl.textContent=score>=85?'✅ Strong Match':score>=70?'⚠️ Good Match':'❌ Needs Work'; atsLbl.style.color=score>=85?'#4ade80':score>=70?'#fbbf24':'#f87171'; }
+  const km=document.getElementById('tr-kw-match');
+  const kmm=document.getElementById('tr-kw-miss');
+  if(km) km.innerHTML=(d.matchedKeywords||[]).map(k=>`<span style="font-size:10px;padding:2px 8px;border-radius:5px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);color:#4ade80">${k}</span>`).join('');
+  if(kmm) kmm.innerHTML=(d.missingKeywords||[]).map(k=>`<span style="font-size:10px;padding:2px 8px;border-radius:5px;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:#f87171">${k}</span>`).join('');
+  document.getElementById('tailor-result').style.display='block';
+}
+
+// ── Build and download .docx ──────────────────────────────────────────────
+function buildResumeHtml(d, job){
+  const b=(arr)=>arr.map(b=>`<li>${b}</li>`).join('');
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    body{font-family:Calibri,sans-serif;font-size:11pt;margin:0;color:#1a1a1a}
+    h1{font-size:18pt;text-align:center;margin:0 0 4px}
+    .contact{text-align:center;font-size:10pt;color:#444;margin-bottom:12px}
+    h2{font-size:11pt;font-weight:bold;text-transform:uppercase;border-bottom:1px solid #000;margin:14px 0 4px;letter-spacing:.5px}
+    .summary{font-size:11pt;margin-bottom:10px;line-height:1.5}
+    .job-title{font-weight:bold;font-size:11pt}
+    .job-meta{font-size:10pt;color:#444;margin-bottom:4px}
+    ul{margin:4px 0 8px 16px;padding:0} li{margin-bottom:2px;font-size:10.5pt;line-height:1.4}
+  </style></head><body>
+    <h1>NIKHIL BOORLA</h1>
+    <div class="contact">nikhil.h725@gmail.com | (470) 515-7342 | Dallas, TX 75234 | linkedin.com/in/nikhil-boorla</div>
+    <div style="text-align:center;font-weight:bold;margin-bottom:10px">Senior / Lead Data Engineer | Azure Databricks | PySpark | Delta Lake | DP-600 Certified</div>
+    <h2>Professional Summary</h2>
+    <div class="summary">${d.summary||''}</div>
+    <h2>Professional Experience</h2>
+    <div class="job-title">Senior Data Engineer — Humana (Contract via NTT DATA)</div>
+    <div class="job-meta">Nov 2025 – Present | Dallas, TX (Remote)</div>
+    <ul>${b(d.humanaBullets||[])}</ul>
+    <div class="job-title">Lead Data Engineer — Capital One (Contract)</div>
+    <div class="job-meta">Feb 2025 – Nov 2025 | Plano, TX (Hybrid)</div>
+    <ul>${b(d.capitalOneBullets||[])}</ul>
+    <div class="job-title">Senior Data Engineer — Reputation</div>
+    <div class="job-meta">Jan 2020 – Jul 2024 | Remote</div>
+    <ul>${b(d.reputationBullets||['Designed and built Medallion Architecture (Bronze/Silver/Gold) on Azure Databricks for Fortune 500 SaaS platform; PySpark/Scala + Delta Lake; Kafka + Spark Streaming; Power BI for 50+ stakeholders.'])}</ul>
+    <div class="job-title">Senior Data Engineer — bioMérieux (Contract)</div>
+    <div class="job-meta">Sep 2024 – Jan 2025 | Dallas, TX</div>
+    <ul><li>Built Microsoft Fabric data pipelines integrating Snowflake, Azure Data Lake, and Cosmos DB; Azure EventHub real-time telemetry; Azure Data Share; 20% cost reduction.</li></ul>
+    <div class="job-title">Data Engineer — Valeo</div>
+    <div class="job-meta">Jun 2016 – Jan 2020 | Dallas, TX</div>
+    <ul><li>Migrated SQL Server DWH to AWS (Glue + EMR → Redshift); 10M+ records/day; 200+ reports migrated to Tableau.</li></ul>
+    <h2>Technical Skills</h2>
+    <p><b>Databricks:</b> Azure Databricks, Delta Live Tables, Workflows/Jobs API, Auto Loader, Unity Catalog, Databricks SQL, Cluster Policies, MLflow, Structured Streaming<br>
+    <b>Languages:</b> Python, PySpark, Spark SQL, SQL, Scala, Snow SQL<br>
+    <b>Cloud — Azure:</b> ADF, ADLS Gen2, Synapse Analytics, EventHub, Key Vault, Azure Purview, Microsoft Fabric<br>
+    <b>Cloud — AWS/GCP:</b> S3, Glue, EMR, Redshift, Lake Formation | BigQuery, Dataflow, Cloud Composer<br>
+    <b>Tools:</b> Snowflake, Snowpark, dbt, Apache Kafka, Airflow, Git, Azure DevOps, CI/CD, Power BI, Tableau<br>
+    <b>Certification:</b> Microsoft DP-600 — Fabric Analytics Engineer</p>
+    <h2>Education</h2>
+    <p>MS Computer Science, Silicon Valley University, CA (GPA 3.67) | BTech Computer Science, JNTU, India (GPA 3.2)</p>
+  </body></html>`;
+}
+
+function downloadDocx(){
+  if(!tailoredContent||!currentTailorJob) return;
+  const html = buildResumeHtml(tailoredContent, currentTailorJob);
+  try{
+    const converted = window.htmlDocx.asBlob(html, {orientation:'portrait',margins:{top:720,right:900,bottom:720,left:900}});
+    const url = URL.createObjectURL(converted);
+    const a = document.createElement('a');
+    a.href=url; a.download='Nikhil_Boorla_'+currentTailorJob.company.replace(/\s+/g,'_')+'_Tailored.docx';
+    a.click(); URL.revokeObjectURL(url);
+  }catch(e){
+    alert('docx generation failed: '+e.message+'. Try Copy Resume Text instead.');
+  }
+}
+
+function copyTailored(){
+  if(!tailoredContent) return;
+  const d=tailoredContent;
+  const text=`SUMMARY:\n${d.summary||''}\n\nHUMANA BULLETS:\n${(d.humanaBullets||[]).map(b=>'• '+b).join('\n')}\n\nCAPITAL ONE BULLETS:\n${(d.capitalOneBullets||[]).map(b=>'• '+b).join('\n')}`;
+  navigator.clipboard.writeText(text).then(()=>showToast('✅ Copied!'));
+}
 
 // ── Init ──────────────────────────────────────────────────────────────────
-(function(){
-  const PROXY='https://shrill-hat-ec23.bnikhil545.workers.dev';
-  if(!localStorage.getItem('jr_proxy')) localStorage.setItem('jr_proxy',PROXY);
-  const key=localStorage.getItem('jr_api_key');
-  if(key) document.getElementById('api-key-input').value=key;
+window.onerror=function(msg,src,line,col,err){
+  const eb=document.getElementById('err-bar');
+  if(eb){eb.textContent='JS Error: '+msg+' (line '+line+')';eb.style.display='block';}
+  console.error('onerror:',msg,line,err);
+  return false;
+};
+(function init(){
+  if(!localStorage.getItem('jr_proxy')) localStorage.setItem('jr_proxy', PROXY);
+  const key = localStorage.getItem('jr_api_key');
+  const keyInput = el('api-key-input');
+  if(key && keyInput) keyInput.value=key;
   updateStatus();
   buildKanban();
   updateCounts();
-  // Auto-load cached jobs
+  // Auto-load cached jobs on open
   setTimeout(()=>{
-    if(localStorage.getItem('jr_api_key')){
-      const cached=getCache(currentMode);
-      if(cached&&cached.length){allJobs=cached;renderJobList();showCacheBar(getCacheAge(currentMode));}
+    const cached = getCache(currentMode);
+    if(cached && cached.length){
+      allJobs=cached; renderJobList(); showCacheBar(getCacheAge(currentMode));
     }
-  },400);
+  },300);
 })();
+
 </script>
 </body>
 </html>
