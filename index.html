@@ -576,7 +576,7 @@ function setMode(mode){
     if(role) role.textContent='🤖 AI Data Engineer (Databricks AI / MLflow / RAG)';
     if(type) type.textContent='✅ Full-Time · On-site / Hybrid / Remote';
   } else {
-    if(desc) desc.textContent='C2C: Corp-to-Corp $85-120/hr own LLC  |  C2H: Contract-to-Hire $75-100/hr → Full-Time · H1B friendly on conversion';
+    if(desc) desc.textContent='Contract jobs only · C2C $85-120/hr · C2H $75-100/hr → FT · Hourly rates shown · H1B friendly on C2H conversion';
     if(role) role.textContent='🤝 C2C / C2H — Databricks · PySpark · DFW + Remote';
     if(type) type.textContent='📋 C2C / C2H · On-site / Hybrid / Remote';
   }
@@ -690,6 +690,15 @@ function renderCard(job, idx){
 // ── Render job list ───────────────────────────────────────────────────────
 function renderJobList(){
   let list = [...allJobs];
+  // In CT mode, filter to contract-relevant jobs only (skip obvious perm titles)
+  if(currentMode==='ct'){
+    const permKeywords=['permanent','full time','full-time salaried','direct hire'];
+    list=list.filter(j=>{
+      const t=(j.title||'').toLowerCase();
+      const isPerm=permKeywords.some(k=>t.includes(k));
+      return !isPerm;
+    });
+  }
   if(remoteFilter==='remote') list=list.filter(j=>j.remote);
   else if(remoteFilter==='db') list=list.filter(j=>j.databricksFirst);
   const dbJobs = list.filter(j=>j.databricksFirst).sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
@@ -946,15 +955,16 @@ async function runSearch(forceRefresh=false){
     const raw=[];const seen=new Set();
     // SOURCE 1: Adzuna (real DFW + remote jobs, requires free key)
     if(azId&&azKey){
-      const AQ={de:['databricks data engineer','pyspark data engineer','azure data engineer'],ai:['machine learning data engineer','AI data engineer python'],ct:['databricks data engineer contract','data engineer C2H']};
+      const AQ={de:['databricks data engineer','pyspark data engineer','azure data engineer'],ai:['machine learning data engineer','AI data engineer python'],ct:['databricks PySpark contract hourly','data engineer contract C2H remote','python spark data engineer contract']};
       for(const q of (AQ[currentMode]||AQ.de)){
         try{
-          const url='https://api.adzuna.com/v1/api/jobs/us/search/1?app_id='+azId+'&app_key='+azKey+'&what='+encodeURIComponent(q)+'&where=dallas+texas&distance=50&results_per_page=10&sort_by=date&content-type=application/json';
+          const contractParam = currentMode==='ct' ? '&contract_type=contract' : '';
+          const url='https://api.adzuna.com/v1/api/jobs/us/search/1?app_id='+azId+'&app_key='+azKey+'&what='+encodeURIComponent(q)+'&where=dallas+texas&distance=50&results_per_page=10&sort_by=date'+contractParam+'&content-type=application/json';
           const resp=await fetch(url);
           const json=await resp.json();
           console.log('Adzuna ['+q+']:',resp.status,(json.results||[]).length);
           if(resp.status===401||resp.status===403)throw new Error('Invalid Adzuna keys');
-          (json.results||[]).forEach(j=>{const id='az_'+j.id;if(!seen.has(id)){seen.add(id);raw.push(mapAdzunaJob(j));}});
+          (json.results||[]).forEach(j=>{const id='az_'+j.id;if(!seen.has(id)){seen.add(id);raw.push(mapAdzunaJob(j,currentMode));}});
           if(raw.length>=15)break;
         }catch(e){if(e.message.includes('Adzuna'))throw e;console.warn('Adzuna:',e.message);}
       }
@@ -987,19 +997,26 @@ async function runSearch(forceRefresh=false){
     if(btn){btn.disabled=false;btn.textContent='Find Jobs';}
   }
 }
-function mapAdzunaJob(job){
+function mapAdzunaJob(job,mode){
   const desc=(job.description||'').toLowerCase();
   const TAGS=['Databricks','PySpark','Delta Lake','Python','SQL','Snowflake','dbt','Kafka','Airflow','Azure','AWS','GCP','Spark','MLflow'];
   const tags=TAGS.filter(t=>desc.includes(t.toLowerCase())).slice(0,6);
   const days=job.created?Math.floor((Date.now()-new Date(job.created))/(864e5)):7;
   return{id:'az_'+job.id,title:job.title||'Data Engineer',company:(job.company&&job.company.display_name)||'Company',
     location:(job.location&&job.location.display_name)||'Dallas, TX',
-    salary:(job.salary_min&&job.salary_max)?'$'+Math.round(job.salary_min/1000)+'K-$'+Math.round(job.salary_max/1000)+'K/yr':'',
+    salary:(job.salary_min&&job.salary_max)
+      ? (mode==='ct'
+          ? '$'+Math.round(job.salary_min/2080)+'-$'+Math.round(job.salary_max/2080)+'/hr ($'+Math.round(job.salary_min/1000)+'K-$'+Math.round(job.salary_max/1000)+'K/yr)'
+          : '$'+Math.round(job.salary_min/1000)+'K-$'+Math.round(job.salary_max/1000)+'K/yr')
+      : (mode==='ct' ? 'Rate: Negotiable' : ''),
     postedRaw:days===0?'Today':days===1?'Yesterday':days+' days ago',postedScore:days,
     sponsorship:'Check posting',applyUrl:job.redirect_url||'',
     tags:tags.length?tags:['Data Engineering','Python','SQL'],source:'Adzuna',
     remote:desc.includes('remote'),databricksFirst:desc.includes('databricks')||(job.title||'').toLowerCase().includes('databricks'),
-    hasEquity:false,description:(job.description||'').slice(0,600),hourlyRate:'',contractType:''};
+    hasEquity:false,description:(job.description||'').slice(0,600),
+    hourlyRate: (mode==='ct'&&job.salary_min) ? '$'+Math.round(job.salary_min/2080)+'-$'+Math.round(job.salary_max/2080)+'/hr' : '',
+    contractType: mode==='ct' ? 'Contract' : '',
+    duration: mode==='ct' ? 'Contract' : ''};
 }
 function mapRemotiveJob(job){
   const desc=(job.description||'').replace(/<[^>]+>/g,'').toLowerCase();
