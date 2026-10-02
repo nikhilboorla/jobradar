@@ -1370,9 +1370,9 @@ async function testRapidAPI(){
   const eb = el('err-bar');
   if(eb){ eb.textContent='🔬 Testing API key…'; eb.style.display='block'; eb.style.background='#1e3a5f'; }
   try{
-    const resp = await fetch('https://jsearch.p.rapidapi.com/search?query=data+engineer&num_pages=1',{
+    const resp = await fetch('https://jsearch.p.rapidapi.com/search?query=data+engineer&page=1&num_pages=1&country=us',{
       method:'GET',
-      headers:{'X-RapidAPI-Key':rapidKey,'X-RapidAPI-Host':'jsearch.p.rapidapi.com'}
+      headers:{'x-rapidapi-key':rapidKey,'x-rapidapi-host':'jsearch.p.rapidapi.com'}
     });
     const json = await resp.json();
     console.log('API TEST result:', resp.status, json);
