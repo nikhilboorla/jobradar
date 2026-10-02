@@ -319,10 +319,12 @@ a{text-decoration:none}
     <span class="badge">Pro</span>
   </div>
   <div id="apibar">
-    <label>API KEY</label>
-    <input id="api-key-input" type="password" placeholder="sk-ant-api03-..." oninput="saveKey(this.value)">
+    <label>ANTHROPIC</label>
+    <input id="api-key-input" type="password" placeholder="sk-ant-api03-... (for Resume Tailor)" oninput="saveKey(this.value)" style="max-width:260px">
+    <label style="margin-left:8px">RAPIDAPI</label>
+    <input id="rapid-key-input" type="password" placeholder="RapidAPI key (for live jobs)" oninput="saveRapidKey(this.value)" style="flex:1;max-width:220px;background:var(--raised);border:1px solid var(--border);border-radius:8px;color:#a78bfa;font-size:12px;padding:6px 10px;outline:none;font-family:'SF Mono','Fira Code',monospace">
     <input id="proxy-url-input" type="hidden">
-    <span id="key-status" class="status-warn">Enter API key</span>
+    <span id="key-status" class="status-warn">Enter keys</span>
   </div>
 </div>
 
@@ -781,13 +783,20 @@ function saveKey(val){
   localStorage.setItem('jr_api_key', clean);
   updateStatus();
 }
+function saveRapidKey(val){
+  const clean = val.replace(/[^\x20-\x7E]/g,'').trim();
+  localStorage.setItem('jr_rapid_key', clean);
+  updateStatus();
+}
 function updateStatus(){
   if(!localStorage.getItem('jr_proxy')) localStorage.setItem('jr_proxy', PROXY);
-  const key = localStorage.getItem('jr_api_key')||'';
+  const ant = localStorage.getItem('jr_api_key')||'';
+  const rap = localStorage.getItem('jr_rapid_key')||'';
   const st = el('key-status');
   if(st){
-    st.textContent = key ? '✅ Ready' : 'Enter API key';
-    st.className = key ? 'status-ready' : 'status-warn';
+    if(rap){ st.textContent='✅ Ready'; st.className='status-ready'; }
+    else if(ant){ st.textContent='⚠️ Add RapidAPI key for live jobs'; st.className='status-warn'; }
+    else{ st.textContent='Enter keys'; st.className='status-warn'; }
   }
 }
 
@@ -1164,15 +1173,32 @@ function buildBoardsPanel(){
 // ── Main search ───────────────────────────────────────────────────────────
 async function runSearch(forceRefresh=false){
   console.log('runSearch called, mode='+currentMode+', forceRefresh='+forceRefresh);
-  const apiKey = localStorage.getItem('jr_api_key')||'';
-  if(!apiKey){
-    const eb=el('err-bar');
-    if(eb){eb.textContent='⚠️ No API key found — paste your sk-ant-api03-... key in the field above';eb.style.display='block';}
+  const rapidKey = localStorage.getItem('jr_rapid_key')||'';
+  const antKey   = localStorage.getItem('jr_api_key')||'';
+
+  if(!rapidKey){
+    // No RapidAPI key — show setup instructions
+    const container = el('job-list');
+    if(container) container.innerHTML = `
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;text-align:center">
+        <div style="font-size:28px;margin-bottom:12px">🔑</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px">Add your free RapidAPI key to see live jobs</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+          JobRadar now uses <b>real live jobs</b> from LinkedIn, Indeed, Glassdoor — not AI-generated.<br>
+          Get a free RapidAPI key (500 searches/month, no credit card):
+        </div>
+        <a href="https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch" target="_blank"
+          style="display:inline-block;padding:10px 24px;background:#a78bfa;color:#000;border-radius:8px;font-weight:700;font-size:13px;margin-bottom:16px">
+          Get Free RapidAPI Key →
+        </a>
+        <div style="font-size:12px;color:var(--muted)">Then paste it in the <b>RAPIDAPI</b> field at the top of the page</div>
+      </div>`;
+    hide('search-hero');
+    const rh=el('results-header'); if(rh) rh.style.display='flex';
     return;
   }
-  console.log('API key found, length='+apiKey.length);
 
-  // Serve from cache if valid
+  // Serve from cache
   if(!forceRefresh){
     const cached = getCache(currentMode);
     if(cached && cached.length){
@@ -1194,46 +1220,51 @@ async function runSearch(forceRefresh=false){
     si=(si+1)%steps.length;
     const scanSrc = el('scan-src');
     if(scanSrc) scanSrc.textContent=steps[si].icon+' '+steps[si].src;
-  },2200);
+  },1500);
 
-  const MSG = {
-    de:'Generate 12 full-time H1B-friendly Data Engineer jobs for DFW 50-mile radius (Dallas, Fort Worth, Westlake, Plano, Frisco, Irving, Richardson, Addison, Carrollton, McKinney, Allen, Arlington, Southlake, Grapevine, Lewisville, Flower Mound, Denton, Grand Prairie, Mansfield, Keller, Coppell, The Colony, Garland) plus Remote 2025. Include roles titled Software Engineer, Platform Engineer, Backend Engineer, Analytics Engineer, Staff Engineer, Engineer II/III where responsibilities are data engineering. Skills: Databricks, PySpark, Delta Lake, Snowflake, dbt, Kafka, ADF, BigQuery. Companies: AT&T, JPMorgan Plano, Microsoft, Databricks, Humana, McKesson, Fidelity Westlake, American Airlines Fort Worth, Toyota Connected, Celanese, Deloitte, Accenture, Cognizant, TCS. applyUrl: linkedin.com/company/[slug]/jobs/ format. Return JSON array only.',
-    ai:'Generate 12 full-time H1B-friendly AI Data Engineer jobs for DFW 50-mile radius plus Remote 2025. Include ML Engineer, MLOps Engineer, Platform Engineer, Staff Engineer roles where responsibilities involve ML data pipelines, LLM, or Databricks AI. Skills: MLflow, Databricks AI, LLM pipelines, RAG, Vector DB, Azure OpenAI, Spark ML. Companies: Databricks, Snowflake, Komodo Health, Tempus AI, Innovaccer, Microsoft Azure AI, Amazon AI, Weights & Biases, Scale AI, Cohere, Anyscale. applyUrl: linkedin.com/company/[slug]/jobs/ format. Set hasEquity:true for startups. Return JSON array only.',
-    ct:'Generate 12 C2C and C2H Data Engineer jobs for DFW 50-mile radius plus Remote 2025. C2C=$85-120/hr own LLC. C2H=$75-100/hr converts to full-time H1B friendly. Skills: Databricks, PySpark, Delta Lake, Python, SQL. Companies: AT&T, JPMorgan Plano, Humana, Capital One, Toyota Connected, Celanese, Deloitte, Accenture, Fidelity Westlake, American Airlines Fort Worth. Include hourlyRate, contractType (C2C or C2H), duration. applyUrl: dice.com or linkedin.com/company/[slug]/jobs/. Return JSON array only.'
+  // JSearch queries per mode
+  const QUERIES = {
+    de: ['databricks data engineer dallas texas','pyspark delta lake data engineer DFW texas','azure databricks data engineer remote dallas'],
+    ai: ['databricks AI data engineer MLflow dallas','machine learning data engineer python pyspark remote texas','MLOps data engineer LLM databricks dallas'],
+    ct: ['databricks data engineer contract dallas texas','pyspark data engineer C2H contract DFW texas','databricks python data engineer corp-to-corp dallas']
   };
+  const EMP_TYPES = { de:'FULLTIME', ai:'FULLTIME', ct:'CONTRACTOR,PARTTIME' };
 
   try{
-    const res = await fetch(PROXY, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({apiKey, model:'claude-sonnet-4-6', max_tokens:6000,
-        system:PROMPTS[currentMode], messages:[{role:'user',content:MSG[currentMode]}]})
-    });
-    clearInterval(sint);
-    if(!res.ok){ const t=await res.text(); throw new Error('Error '+res.status+': '+t.slice(0,200)); }
-    const data = await res.json();
-    const raw = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
-    const js = raw.indexOf('['); const je = raw.lastIndexOf(']');
-    const jsonStr = (js>=0&&je>js) ? raw.slice(js,je+1) : null;
-    const m = jsonStr ? [jsonStr] : raw.match(/\[[\s\S]*\]/);
-    if(m){
-      try{
-        const arr = JSON.parse(m[0]);
-        if(Array.isArray(arr)&&arr.length){
-          const sorted = arr.sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
-          const existing = getCache(currentMode)||[];
-          const existKeys = new Set(existing.map(j=>(j.company+'|'+j.title).toLowerCase()));
-          const newPos = sorted.filter(j=>!existKeys.has((j.company+'|'+j.title).toLowerCase()));
-          allJobs = sorted;
-          setCache(currentMode, allJobs);
-          renderJobList();
-          if(newPos.length>0&&existing.length>0){
-            const nb=el('new-positions-bar');
-            if(nb){nb.textContent='✨ '+newPos.length+' new position'+(newPos.length>1?'s':'')+' found'; nb.style.display='block';}
-          }
+    const queries = QUERIES[currentMode] || QUERIES.de;
+    const empType = EMP_TYPES[currentMode] || 'FULLTIME';
+
+    // Run all 3 queries in parallel
+    const promises = queries.map(q =>
+      fetch(`https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(q)}&location=Dallas%2C+Texas%2C+United+States&date_posted=month&employment_types=${empType}&num_pages=1`, {
+        headers:{
+          'X-RapidAPI-Key': rapidKey,
+          'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
         }
-      }catch(e2){ throw new Error('Parse error: '+e2.message); }
-    }
-    if(!allJobs.length) throw new Error('No jobs in response. Try again.');
+      }).then(r=>r.json()).catch(()=>({data:[]}))
+    );
+
+    const results = await Promise.all(promises);
+    clearInterval(sint);
+
+    // Merge, deduplicate by job_id
+    const seen = new Set();
+    const raw = [];
+    results.forEach(r=>{
+      (r.data||[]).forEach(job=>{
+        if(!seen.has(job.job_id)){ seen.add(job.job_id); raw.push(job); }
+      });
+    });
+
+    if(!raw.length) throw new Error('No jobs returned from JSearch. Check your RapidAPI key.');
+
+    // Map to our format
+    allJobs = raw.map((job,i) => mapJSearchJob(job)).filter(Boolean)
+      .sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
+
+    setCache(currentMode, allJobs);
+    renderJobList();
+
   }catch(e){
     clearInterval(sint);
     if(sb) sb.style.display='none';
@@ -1246,6 +1277,53 @@ async function runSearch(forceRefresh=false){
     if(sb) sb.style.display='none';
     if(btn){ btn.disabled=false; btn.textContent='Find Jobs'; }
   }
+}
+
+// ── Map JSearch job to our format ─────────────────────────────────────────
+function mapJSearchJob(job){
+  if(!job||!job.job_title) return null;
+  const title = job.job_title||'';
+  const company = job.employer_name||'';
+  const city = job.job_city||'';
+  const state = job.job_state||'';
+  const location = [city,state].filter(Boolean).join(', ') || (job.job_is_remote?'Remote':'Dallas, TX');
+  // Salary
+  let salary = '';
+  if(job.job_min_salary&&job.job_max_salary){
+    const fmt=n=>n>=1000?'$'+Math.round(n/1000)+'K':'$'+n;
+    const per = job.job_salary_period==='HOUR'?'/hr':'/yr';
+    salary = fmt(job.job_min_salary)+'-'+fmt(job.job_max_salary)+per;
+  } else if(job.job_salary_currency){ salary='Salary available'; }
+  // Posted score
+  let postedScore=30;
+  if(job.job_posted_at_datetime_utc){
+    const days=Math.floor((Date.now()-new Date(job.job_posted_at_datetime_utc))/(864e5));
+    postedScore=days;
+  }
+  const postedRaw = postedScore===0?'Today':postedScore===1?'Yesterday':postedScore+' days ago';
+  // Extract tags from description
+  const desc = (job.job_description||'').toLowerCase();
+  const ALL_TAGS=['Databricks','PySpark','Delta Lake','Python','SQL','Snowflake','dbt','Kafka','Airflow',
+    'Azure','AWS','GCP','Spark','MLflow','Docker','Kubernetes','Terraform','Git','CI/CD',
+    'ADF','ADLS','Synapse','Delta Live Tables','Unity Catalog','Scala','BigQuery','Redshift'];
+  const tags = ALL_TAGS.filter(t=>desc.includes(t.toLowerCase())).slice(0,7);
+  const databricksFirst = desc.includes('databricks')||title.toLowerCase().includes('databricks');
+  return {
+    id: job.job_id,
+    title, company, location, salary,
+    postedRaw, postedScore,
+    sponsorship: 'Check posting',
+    applyUrl: job.job_apply_link||job.job_google_link||'https://www.linkedin.com/jobs/search/?keywords='+encodeURIComponent(title+' '+company),
+    tags: tags.length ? tags : ['Data Engineering','Python','SQL'],
+    source: job.job_publisher||'LinkedIn',
+    remote: job.job_is_remote||false,
+    databricksFirst,
+    hasEquity: false,
+    description: (job.job_description||'').slice(0,500),
+    jobId: job.job_id,
+    fullApplyLink: job.job_apply_link,
+    googleLink: job.job_google_link,
+  };
 }
 
 // ── Resume tailor constants ───────────────────────────────────────────────
@@ -1345,7 +1423,7 @@ function openTailor(jobId){
   if(meta) meta.textContent = job.title+' · '+job.company+(job.location?' · '+job.location:'');
   // Pre-fill JD with tags
   const jdInput = document.getElementById('tailor-jd');
-  if(jdInput) jdInput.value = (job.tags||[]).length ? 'Skills required: '+(job.tags||[]).join(', ')+'\n\nRole at '+job.company+': '+job.title+'\nLocation: '+job.location : '';
+  if(jdInput) jdInput.value = job.description ? job.description.slice(0,800)+'\n\n[Full JD from: '+job.applyUrl+']' : (job.tags||[]).length ? 'Skills required: '+(job.tags||[]).join(', ')+'\n\nRole: '+job.title+' at '+job.company : '';
   // Build status buttons
   buildStatusBtns(jobId);
   // Reset UI
@@ -1508,6 +1586,9 @@ window.onerror=function(msg,src,line,col,err){
   const key = localStorage.getItem('jr_api_key');
   const keyInput = el('api-key-input');
   if(key && keyInput) keyInput.value=key;
+  const rapKey = localStorage.getItem('jr_rapid_key');
+  const rapInput = el('rapid-key-input');
+  if(rapKey && rapInput) rapInput.value=rapKey;
   updateStatus();
   buildKanban();
   updateCounts();
