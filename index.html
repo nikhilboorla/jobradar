@@ -410,6 +410,7 @@ a{text-decoration:none}
       <button id="find-btn" onclick="runSearch(false)">Find Jobs</button>
         <div class="refresh-row">
           <button class="ghost-btn" onclick="runSearch(true)">↻ Force refresh</button>
+          <button class="ghost-btn" onclick="testRapidAPI()" style="color:#a78bfa">🔬 Test API key</button>
           <button class="ghost-btn" onclick="clearAllCache()">✕ Clear cache</button>
         </div>
       </div>
@@ -911,12 +912,20 @@ function matchClass(score){
   return n>=85?'match-high':n>=70?'match-mid':'match-low';
 }
 
+// Store job by index for safe onclick reference
+const _jobCache = {};
 function renderCard(job, idx){
+  _jobCache[idx] = job; // safe reference by number
   const jobId = job.id || (job.title+job.company);
   const saved = savedJobs.some(s=>(s.id||s.title+s.company)===jobId);
   const matchStr = job.atsScore ? job.atsScore+'%' : job.databricksFirst?'92%':'80%';
-  const applyUrl = buildUrl(job);
+  // Use the real apply link from JSearch directly
+  const applyUrl = (job.applyUrl && job.applyUrl.startsWith('http')) ? job.applyUrl : buildUrl(job);
   const gUrl = googleUrl(job);
+  const applyLabel = applyUrl.includes('linkedin.com') ? '🔗 Apply on LinkedIn' :
+                     applyUrl.includes('indeed.com') ? '🔗 Apply on Indeed' :
+                     applyUrl.includes('glassdoor') ? '🔗 Apply on Glassdoor' :
+                     applyUrl.includes('ziprecruiter') ? '🔗 Apply on ZipRecruiter' : '🔗 Apply Now';
   return `<div class="job-card" style="animation-delay:${idx*0.04}s">
     <div class="card-top">
       <div class="co-avatar" style="background:${coColor(job.company||'')}">
@@ -944,12 +953,12 @@ function renderCard(job, idx){
     </div>
     <div class="card-divider"></div>
     <div class="card-btns">
-      <a href="${applyUrl}" target="_blank" class="btn-apply">View on LinkedIn →</a>
+      <a href="${applyUrl}" target="_blank" class="btn-apply" rel="noopener">${applyLabel}</a>
       <a href="${gUrl}" target="_blank" class="btn-google">🔍</a>
       <button class="btn-save${saved?' saved':''}" onclick="toggleSave('${jobId}',this)">${saved?'🔖':'☆'}</button>
     </div>
     <div style="display:flex;gap:6px;margin-top:8px">
-      <button onclick="openTailor('${jobId}')" style="flex:1;padding:7px;border-radius:8px;border:1px solid #27272a;background:rgba(34,211,238,.06);color:#22d3ee;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">✨ Tailor Resume</button>
+      <button onclick="openTailorByIdx(${idx})" style="flex:1;padding:7px;border-radius:8px;border:1px solid #27272a;background:rgba(34,211,238,.06);color:#22d3ee;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">✨ Tailor Resume</button>
       <button data-status-id="${jobId}" onclick="cycleStatus('${jobId}',this)" style="padding:7px 12px;border-radius:8px;border:1px solid #27272a;background:transparent;color:#71717a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">${getStatus(jobId)||'Track ▾'}</button>
     </div>
   </div>`;
@@ -1468,27 +1477,34 @@ function updateKanban(){
 }
 
 // ── Open tailor drawer ────────────────────────────────────────────────────
+function openTailorByIdx(idx){
+  const job = _jobCache[idx];
+  if(!job){ alert('Job data not found — try refreshing jobs.'); return; }
+  _openTailorWithJob(job);
+}
 function openTailor(jobId){
-  const job = [...allJobs, ...savedJobs].find(j=>(j.id||j.title+j.company)===jobId);
-  if(!job) return;
+  // legacy: find by id string
+  const found = [...allJobs,...savedJobs].find(j=>(j.id||j.title+j.company)===jobId);
+  if(found) _openTailorWithJob(found);
+  else alert('Job not found.');
+}
+function _openTailorWithJob(job){
   currentTailorJob = job;
   tailoredContent = null;
-  // Set job meta
   const meta = document.getElementById('tailor-job-meta');
-  if(meta) meta.textContent = job.title+' · '+job.company+(job.location?' · '+job.location:'');
-  // Pre-fill JD with tags
+  if(meta) meta.textContent = (job.title||'')+(job.company?' · '+job.company:'')+(job.location?' · '+job.location:'');
   const jdInput = document.getElementById('tailor-jd');
-  if(jdInput) jdInput.value = job.description ? job.description.slice(0,800)+'\n\n[Full JD from: '+job.applyUrl+']' : (job.tags||[]).length ? 'Skills required: '+(job.tags||[]).join(', ')+'\n\nRole: '+job.title+' at '+job.company : '';
-  // Build status buttons
-  buildStatusBtns(jobId);
-  // Reset UI
+  if(jdInput) jdInput.value = job.description
+    ? job.description.slice(0,800)
+    : (job.tags||[]).length ? 'Skills: '+(job.tags||[]).join(', ')+'. Role: '+job.title+' at '+job.company : '';
+  buildStatusBtns(job.id||(job.title+job.company));
   document.getElementById('tailor-progress').style.display='none';
   document.getElementById('tailor-result').style.display='none';
   document.getElementById('gen-btn').style.display='block';
-  // Show
   document.getElementById('tailor-overlay').style.display='block';
   document.getElementById('tailor-drawer').style.display='flex';
 }
+
 function closeTailor(){
   document.getElementById('tailor-overlay').style.display='none';
   document.getElementById('tailor-drawer').style.display='none';
