@@ -319,12 +319,11 @@ a{text-decoration:none}
     <span class="badge">Pro</span>
   </div>
   <div id="apibar">
-    <label>ANTHROPIC</label>
-    <input id="api-key-input" type="password" placeholder="sk-ant-api03-... (for Resume Tailor)" oninput="saveKey(this.value)" style="max-width:260px">
-    <label style="margin-left:8px">RAPIDAPI</label>
-    <input id="rapid-key-input" type="password" placeholder="RapidAPI key (for live jobs)" oninput="saveRapidKey(this.value)" style="flex:1;max-width:220px;background:var(--raised);border:1px solid var(--border);border-radius:8px;color:#a78bfa;font-size:12px;padding:6px 10px;outline:none;font-family:'SF Mono','Fira Code',monospace">
+    <label>API KEY</label>
+    <input id="api-key-input" type="password" placeholder="sk-ant-api03-... (Resume Tailor)" oninput="saveKey(this.value)">
     <input id="proxy-url-input" type="hidden">
-    <span id="key-status" class="status-warn">Enter keys</span>
+    <input id="rapid-key-input" type="hidden">
+    <span id="key-status" class="status-warn">Enter API key</span>
   </div>
 </div>
 
@@ -396,7 +395,19 @@ a{text-decoration:none}
           </div>
           <div id="mode-desc">Databricks · PySpark · Delta Lake · Delta Live Tables · Unity Catalog · ADF · Kafka · dbt · Snowflake</div>
         </div>
-        <button id="find-btn" onclick="runSearch(false)">Find Jobs</button>
+        <div id="rapid-key-section" style="margin-bottom:10px">
+        <div style="font-size:10px;color:#a78bfa;font-weight:700;letter-spacing:.5px;margin-bottom:6px">RAPIDAPI KEY — for live jobs from LinkedIn / Indeed / Glassdoor</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="rapid-key-visible" type="password"
+            placeholder="Paste your RapidAPI key here (free at rapidapi.com/jsearch)"
+            oninput="saveRapidKey(this.value)"
+            style="flex:1;background:#0a0a0a;border:1px solid #52525b;border-radius:8px;color:#a78bfa;font-size:12px;padding:8px 12px;outline:none;font-family:'SF Mono','Fira Code',monospace">
+          <a href="https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch" target="_blank"
+            style="font-size:11px;color:#a78bfa;white-space:nowrap;border:1px solid #52525b;padding:7px 10px;border-radius:8px;font-weight:600">Get Free Key →</a>
+        </div>
+        <div id="rapid-key-status" style="font-size:10px;margin-top:4px;color:#71717a"></div>
+      </div>
+      <button id="find-btn" onclick="runSearch(false)">Find Jobs</button>
         <div class="refresh-row">
           <button class="ghost-btn" onclick="runSearch(true)">↻ Force refresh</button>
           <button class="ghost-btn" onclick="clearAllCache()">✕ Clear cache</button>
@@ -786,6 +797,19 @@ function saveKey(val){
 function saveRapidKey(val){
   const clean = val.replace(/[^\x20-\x7E]/g,'').trim();
   localStorage.setItem('jr_rapid_key', clean);
+  // sync hidden input
+  const h = el('rapid-key-input');
+  if(h) h.value = clean;
+  // Update status label
+  const rs = el('rapid-key-status');
+  if(rs){
+    if(clean.length > 10){
+      rs.textContent = '✅ Key saved — click Find Jobs';
+      rs.style.color = '#4ade80';
+    } else {
+      rs.textContent = '';
+    }
+  }
   updateStatus();
 }
 function updateStatus(){
@@ -1173,7 +1197,7 @@ function buildBoardsPanel(){
 // ── Main search ───────────────────────────────────────────────────────────
 async function runSearch(forceRefresh=false){
   console.log('runSearch called, mode='+currentMode+', forceRefresh='+forceRefresh);
-  const rapidKey = localStorage.getItem('jr_rapid_key')||'';
+  const rapidKey = localStorage.getItem('jr_rapid_key') || (el('rapid-key-visible')?el('rapid-key-visible').value:'')||'';
   const antKey   = localStorage.getItem('jr_api_key')||'';
 
   if(!rapidKey){
@@ -1250,13 +1274,16 @@ async function runSearch(forceRefresh=false){
     // Merge, deduplicate by job_id
     const seen = new Set();
     const raw = [];
-    results.forEach(r=>{
+    // Check for auth error in any result
+  const authErr = results.find(r=>r.message&&r.message.includes('invalid x-api-key'));
+  if(authErr) throw new Error('Invalid RapidAPI key. Go to rapidapi.com → Apps → default-application → copy the X-RapidAPI-Key value.');
+  results.forEach(r=>{
       (r.data||[]).forEach(job=>{
         if(!seen.has(job.job_id)){ seen.add(job.job_id); raw.push(job); }
       });
     });
 
-    if(!raw.length) throw new Error('No jobs returned from JSearch. Check your RapidAPI key.');
+    if(!raw.length) throw new Error('No jobs found. Try Force Refresh or check your RapidAPI key.');
 
     // Map to our format
     allJobs = raw.map((job,i) => mapJSearchJob(job)).filter(Boolean)
@@ -1589,6 +1616,14 @@ window.onerror=function(msg,src,line,col,err){
   const rapKey = localStorage.getItem('jr_rapid_key');
   const rapInput = el('rapid-key-input');
   if(rapKey && rapInput) rapInput.value=rapKey;
+  const rapVisible = el('rapid-key-visible');
+  if(rapKey && rapVisible){
+    rapVisible.value=rapKey;
+    const rs=el('rapid-key-status');
+    if(rs){rs.textContent='✅ Key saved — click Find Jobs';rs.style.color='#4ade80';}
+    const rs2=el('rapid-key-section');
+    if(rs2) rs2.style.borderColor='rgba(167,139,250,.3)';
+  }
   updateStatus();
   buildKanban();
   updateCounts();
