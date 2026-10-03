@@ -177,16 +177,26 @@ button{cursor:pointer;font-family:inherit}a{text-decoration:none}
           </div>
           <div id="mode-desc">Databricks · PySpark · Delta Lake · DLT · Unity Catalog · ADF · Kafka · dbt · Snowflake</div>
         </div>
-        <div id="adzuna-key-section" style="margin-bottom:12px;background:#0a0a0a;border:1px solid #3f3f46;border-radius:10px;padding:12px">
+        <div style="margin-bottom:12px;background:#0a0a0a;border:1px solid #3f3f46;border-radius:10px;padding:12px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div style="font-size:10px;color:#22d3ee;font-weight:700;letter-spacing:.5px">ADZUNA API — free real DFW + remote jobs</div>
+            <div style="font-size:10px;color:#22d3ee;font-weight:700;letter-spacing:.5px">ADZUNA — free DFW + remote jobs (Indeed · Monster · LinkedIn)</div>
             <a href="https://developer.adzuna.com/signup" target="_blank" style="font-size:10px;color:#22d3ee;border:1px solid #3f3f46;padding:3px 8px;border-radius:5px;font-weight:600">Get Free Keys →</a>
           </div>
           <div style="display:flex;gap:6px;margin-bottom:6px">
-            <input id="adzuna-app-id" type="text" placeholder="App ID" oninput="saveAdzunaKeys()" style="flex:1;background:#141417;border:1px solid #3f3f46;border-radius:7px;color:#22d3ee;font-size:11px;padding:6px 10px;outline:none;font-family:'SF Mono',monospace">
-            <input id="adzuna-api-key" type="password" placeholder="API Key" oninput="saveAdzunaKeys()" style="flex:1;background:#141417;border:1px solid #3f3f46;border-radius:7px;color:#22d3ee;font-size:11px;padding:6px 10px;outline:none;font-family:'SF Mono',monospace">
+            <input id="adzuna-app-id" type="text" placeholder="Adzuna App ID" oninput="saveAdzunaKeys()" style="flex:1;background:#141417;border:1px solid #3f3f46;border-radius:7px;color:#22d3ee;font-size:11px;padding:6px 10px;outline:none;font-family:'SF Mono',monospace">
+            <input id="adzuna-api-key" type="password" placeholder="Adzuna API Key" oninput="saveAdzunaKeys()" style="flex:1;background:#141417;border:1px solid #3f3f46;border-radius:7px;color:#22d3ee;font-size:11px;padding:6px 10px;outline:none;font-family:'SF Mono',monospace">
           </div>
-          <div id="adzuna-status" style="font-size:10px;color:#71717a">No key — shows Remotive remote jobs only (free, no key needed)</div>
+          <div id="adzuna-status" style="font-size:10px;color:#71717a">No key — shows Remotive remote jobs only</div>
+        </div>
+        <div id="adzuna-key-section" style="margin-bottom:12px;background:#0a0a0a;border:1px solid #52400e;border-radius:10px;padding:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-size:10px;color:#fbbf24;font-weight:700;letter-spacing:.5px">JOOBLE — 140+ job boards (Dice · ZipRecruiter · Monster · Indeed · CareerBuilder)</div>
+            <a href="https://jooble.org/api/about" target="_blank" style="font-size:10px;color:#fbbf24;border:1px solid #52400e;padding:3px 8px;border-radius:5px;font-weight:600">Get Free Key →</a>
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <input id="jooble-key" type="password" placeholder="Jooble API Key (free at jooble.org/api/about)" oninput="saveJoobleKey()" style="flex:1;background:#141417;border:1px solid #52400e;border-radius:7px;color:#fbbf24;font-size:11px;padding:6px 10px;outline:none;font-family:'SF Mono',monospace">
+          </div>
+          <div id="jooble-status" style="font-size:10px;color:#71717a">Optional — adds Dice, ZipRecruiter, CareerBuilder contract listings</div>
         </div>
         <button id="find-btn" onclick="runSearch(false)">Find Jobs</button>
         <div class="refresh-row">
@@ -504,6 +514,15 @@ function hide(id){ const e=el(id); if(e) e.style.display='none'; }
 
 // ── API key ───────────────────────────────────────────────────────────────
 function saveRapidKey(val){}
+function saveJoobleKey(){
+  const key=(el('jooble-key')||{}).value||'';
+  localStorage.setItem('jr_jooble_key',key.trim());
+  const st=el('jooble-status');
+  if(st){
+    if(key.trim().length>5){st.textContent='✅ Jooble key saved — adds Dice, Monster, CareerBuilder results';st.style.color='#4ade80';}
+    else{st.textContent='Optional — adds Dice, ZipRecruiter, CareerBuilder contract listings';st.style.color='#71717a';}
+  }
+}
 function saveAdzunaKeys(){
   const appId=(el('adzuna-app-id')||{}).value||'';
   const apiKey=(el('adzuna-api-key')||{}).value||'';
@@ -539,6 +558,8 @@ function saveRapidKey(val){
 function updateStatus(){
   if(!localStorage.getItem('jr_proxy')) localStorage.setItem('jr_proxy', PROXY);
   const ant=localStorage.getItem('jr_api_key')||'';
+  const jKey=localStorage.getItem('jr_jooble_key')||'';
+  if(jKey){const f=el('jooble-key');if(f){f.value=jKey;const st=el('jooble-status');if(st){st.textContent='✅ Jooble key saved';st.style.color='#4ade80';}}}
   const azId=localStorage.getItem('jr_adzuna_id')||'';
   const st=el('key-status');
   if(st){
@@ -690,18 +711,13 @@ function renderCard(job, idx){
 // ── Render job list ───────────────────────────────────────────────────────
 function renderJobList(){
   let list = [...allJobs];
-  // In CT mode — filter to contract positions only, compute hourly rate
+  // In CT mode — show all results, label contract jobs, add hourly rate
   if(currentMode==='ct'){
-    list = list
-      .filter(j=>j.isContract)  // only true contract jobs
-      .map(j=>({
-        ...j,
-        contractType: 'Contract',
-        hourlyRate: j.hourlyRate
-          || (j.salary&&j.salary.match(/\$(\d+)K-\$(\d+)K/)
-              ? (m=>{return m?'$'+Math.round(m[1]*1000/2080)+'-$'+Math.round(m[2]*1000/2080)+'/hr':''})(j.salary.match(/\$(\d+)K-\$(\d+)K/))
-              : '')
-      }));
+    list = list.map(j=>{
+      const m = j.salary ? j.salary.match(/\$(\d+)K-\$(\d+)K/) : null;
+      const hrRate = j.hourlyRate || (m ? '$'+Math.round(m[1]*1000/2080)+'-$'+Math.round(m[2]*1000/2080)+'/hr' : '');
+      return {...j, contractType:'Contract', hourlyRate:hrRate};
+    });
   }
   if(remoteFilter==='remote') list=list.filter(j=>j.remote);
   else if(remoteFilter==='db') list=list.filter(j=>j.databricksFirst);
@@ -953,6 +969,8 @@ async function runSearch(forceRefresh=false){
   const steps=SCAN_STEPS[currentMode]||SCAN_STEPS.de;
   let si=0;
   const sint=setInterval(()=>{si=(si+1)%steps.length;const ss=el('scan-src');if(ss)ss.textContent=steps[si].icon+' '+steps[si].src;},1800);
+  const jKey=localStorage.getItem('jr_jooble_key')||'';
+  if(jKey){const f=el('jooble-key');if(f){f.value=jKey;const st=el('jooble-status');if(st){st.textContent='✅ Jooble key saved';st.style.color='#4ade80';}}}
   const azId=localStorage.getItem('jr_adzuna_id')||'';
   const azKey=localStorage.getItem('jr_adzuna_key')||'';
   try{
@@ -1048,6 +1066,28 @@ function mapAdzunaJob(job,mode){
     contractType: (job.contract_type==='contract'||mode==='ct') ? 'Contract' : '',
     duration: mode==='ct' ? 'Contract' : ''};
 }
+function mapJoobleJob(job){
+  const desc=(job.snippet||job.title||'').toLowerCase();
+  const TAGS=['Databricks','PySpark','Delta Lake','Python','SQL','Snowflake','dbt','Kafka','Airflow','Azure','AWS','GCP','Spark','MLflow'];
+  const tags=TAGS.filter(t=>desc.includes(t.toLowerCase())).slice(0,6);
+  const days=job.updated?Math.floor((Date.now()-new Date(job.updated))/(864e5)):7;
+  const sal=job.salary||'';
+  const hrMatch=sal.match(/\$(\d+)[-–](\d+)\s*\/hr/i)||sal.match(/\$(\d+)[-–](\d+)\s*per hour/i);
+  const yrMatch=sal.match(/\$(\d+)[Kk][-–]\$(\d+)[Kk]/)||sal.match(/\$(\d+,?\d+)[-–]\$(\d+,?\d+)/);
+  let salary='', hourlyRate='';
+  if(hrMatch){hourlyRate='$'+hrMatch[1]+'-$'+hrMatch[2]+'/hr';salary=sal;}
+  else if(yrMatch){salary=sal;hourlyRate='$'+Math.round(parseInt(yrMatch[1])*1000/2080)+'-$'+Math.round(parseInt(yrMatch[2])*1000/2080)+'/hr';}
+  else if(sal){salary=sal;}
+  return{id:'jb_'+job.id,title:job.title||'Data Engineer',company:job.company||'Company',
+    location:job.location||'Dallas, TX',salary,hourlyRate,
+    postedRaw:days===0?'Today':days===1?'Yesterday':days+' days ago',postedScore:days,
+    sponsorship:'Check posting',applyUrl:job.link||'',
+    tags:tags.length?tags:['Data Engineering','Python','SQL'],source:job.source||'Jooble',
+    remote:(job.location||'').toLowerCase().includes('remote'),
+    databricksFirst:desc.includes('databricks')||(job.title||'').toLowerCase().includes('databricks'),
+    isContract:desc.includes('contract')||desc.includes('c2c')||desc.includes('/hr')||!!hrMatch,
+    hasEquity:false,description:job.snippet||'',contractType:'',duration:''};
+}
 function mapRemotiveJob(job){
   const desc=(job.description||'').replace(/<[^>]+>/g,'').toLowerCase();
   const TAGS=['Databricks','PySpark','Python','SQL','Snowflake','dbt','Kafka','Airflow','Azure','AWS','GCP','Spark','MLflow'];
@@ -1062,6 +1102,8 @@ function mapRemotiveJob(job){
     hasEquity:false,description:desc.slice(0,600),hourlyRate:'',contractType:''};
 }
 async function testRapidAPI(){
+  const jKey=localStorage.getItem('jr_jooble_key')||'';
+  if(jKey){const f=el('jooble-key');if(f){f.value=jKey;const st=el('jooble-status');if(st){st.textContent='✅ Jooble key saved';st.style.color='#4ade80';}}}
   const azId=localStorage.getItem('jr_adzuna_id')||'';
   const azKey=localStorage.getItem('jr_adzuna_key')||'';
   const eb=el('err-bar');
@@ -1426,6 +1468,8 @@ window.onerror=function(msg,src,line,col,err){
   const key = localStorage.getItem('jr_api_key');
   const keyInput = el('api-key-input');
   if(key && keyInput) keyInput.value=key;
+  const jKey=localStorage.getItem('jr_jooble_key')||'';
+  if(jKey){const f=el('jooble-key');if(f){f.value=jKey;const st=el('jooble-status');if(st){st.textContent='✅ Jooble key saved';st.style.color='#4ade80';}}}
   const azId=localStorage.getItem('jr_adzuna_id')||'';
   const azKey=localStorage.getItem('jr_adzuna_key')||'';
   if(azId){const f=el('adzuna-app-id');if(f)f.value=azId;}
