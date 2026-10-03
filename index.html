@@ -690,15 +690,18 @@ function renderCard(job, idx){
 // ── Render job list ───────────────────────────────────────────────────────
 function renderJobList(){
   let list = [...allJobs];
-  // In CT mode, label all jobs as contract and show hourly estimates
+  // In CT mode — filter to contract positions only, compute hourly rate
   if(currentMode==='ct'){
-    list=list.map(j=>({
-      ...j,
-      contractType: j.contractType||'Contract',
-      hourlyRate: j.hourlyRate||(j.salary&&j.salary.includes('K')
-        ? (()=>{const m=j.salary.match(/\$(\d+)K-\$(\d+)K/);return m?'$'+Math.round(m[1]*1000/2080)+'-$'+Math.round(m[2]*1000/2080)+'/hr':''})()
-        : '')
-    }));
+    list = list
+      .filter(j=>j.isContract)  // only true contract jobs
+      .map(j=>({
+        ...j,
+        contractType: 'Contract',
+        hourlyRate: j.hourlyRate
+          || (j.salary&&j.salary.match(/\$(\d+)K-\$(\d+)K/)
+              ? (m=>{return m?'$'+Math.round(m[1]*1000/2080)+'-$'+Math.round(m[2]*1000/2080)+'/hr':''})(j.salary.match(/\$(\d+)K-\$(\d+)K/))
+              : '')
+      }));
   }
   if(remoteFilter==='remote') list=list.filter(j=>j.remote);
   else if(remoteFilter==='db') list=list.filter(j=>j.databricksFirst);
@@ -973,8 +976,9 @@ async function runSearch(forceRefresh=false){
       for(const q of queries.slice(0,2)){           // 2 queries × 4 locations = 8 calls
         for(const loc of DFW_LOCATIONS){
           const whereParam = loc.where ? '&where='+loc.where+'&distance='+loc.dist : '&where=remote';
+          const ctParam = currentMode==='ct' ? '&contract_type=contract' : '';
           const url='https://api.adzuna.com/v1/api/jobs/us/search/1?app_id='+azId+'&app_key='+azKey
-            +'&what='+encodeURIComponent(q)+whereParam+'&results_per_page=8&sort_by=date&content-type=application/json';
+            +'&what='+encodeURIComponent(q)+whereParam+ctParam+'&results_per_page=8&sort_by=date&content-type=application/json';
           adzunaFetches.push(
             fetch(url)
               .then(r=>{if(r.status===401||r.status===403)throw new Error('Invalid Adzuna keys');return r.json();})
@@ -1034,7 +1038,14 @@ function mapAdzunaJob(job,mode){
     remote:desc.includes('remote'),databricksFirst:desc.includes('databricks')||(job.title||'').toLowerCase().includes('databricks'),
     hasEquity:false,description:(job.description||'').slice(0,600),
     hourlyRate: (job.salary_min&&job.salary_max) ? '$'+Math.round(job.salary_min/2080)+'-$'+Math.round(job.salary_max/2080)+'/hr' : '',
-    contractType: mode==='ct' ? 'Contract' : '',
+    adzunaContractType: job.contract_type||'',
+    adzunaContractTime: job.contract_time||'',
+    isContract: (job.contract_type==='contract')
+      || desc.includes('contract') || desc.includes(' c2c ') || desc.includes(' c2h ')
+      || desc.includes('corp to corp') || desc.includes('corp-to-corp')
+      || desc.includes('contract-to-hire') || desc.includes('w2 contract')
+      || (job.title||'').toLowerCase().includes('contract'),
+    contractType: (job.contract_type==='contract'||mode==='ct') ? 'Contract' : '',
     duration: mode==='ct' ? 'Contract' : ''};
 }
 function mapRemotiveJob(job){
