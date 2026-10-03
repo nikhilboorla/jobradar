@@ -709,8 +709,35 @@ function renderCard(job, idx){
 }
 
 // ── Render job list ───────────────────────────────────────────────────────
+// Titles that are NOT data engineering — always exclude
+const EXCLUDE_TITLES=['rails engineer','full-stack','frontend engineer','front-end',
+  'mobile engineer','ios engineer','android engineer','devops engineer',
+  'security engineer','qa engineer','sales engineer','solutions engineer',
+  'account executive','product manager','designer','marketing',
+  'data scientist','research scientist','applied scientist','ml scientist'];
+
+// Titles that ARE data engineering — must match at least one
+const DE_TITLES=['data engineer','etl','elt','data platform','data pipeline',
+  'data infrastructure','analytics engineer','data architect','spark engineer',
+  'databricks engineer','pyspark','data integration','data ops','dataops',
+  'bi engineer','warehouse engineer','lake engineer','platform engineer',
+  'software engineer','backend engineer','staff engineer','senior engineer',
+  'lead engineer','principal engineer','engineer ii','engineer iii'];
+
+function isDataEngineeringRole(job){
+  const t=(job.title||'').toLowerCase();
+  // Exclude irrelevant titles
+  if(EXCLUDE_TITLES.some(k=>t.includes(k))) return false;
+  // Must match a DE-related title OR have 3+ DE tags
+  const hasDeTitle=DE_TITLES.some(k=>t.includes(k));
+  const deTagCount=(job.tags||[]).filter(tag=>
+    ['Databricks','PySpark','Spark','Delta Lake','ETL','ELT','Kafka','Airflow','dbt','ADF','Glue','EMR'].includes(tag)
+  ).length;
+  return hasDeTitle || deTagCount>=2;
+}
+
 function renderJobList(){
-  let list = [...allJobs];
+  let list = [...allJobs].filter(isDataEngineeringRole);  // always filter irrelevant roles
   // CT mode — show only contract positions, compute hourly rate
   if(currentMode==='ct'){
     // Keep jobs from Jooble contractor filter, Remotive, or contract keywords in title/desc
