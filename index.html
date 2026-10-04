@@ -738,33 +738,35 @@ function isDataEngineeringRole(job){
 
 function renderJobList(){
   let list = [...allJobs].filter(isDataEngineeringRole);  // always filter irrelevant roles
-  // CT mode — show only contract positions, compute hourly rate
+  // CT mode — filter using structured employment_type field ONLY
+  // (same logic as LinkedIn f_JT=C, Dice CONTRACTS:true, Indeed jt=contract)
   if(currentMode==='ct'){
-    // Keep jobs from Jooble contractor filter, Remotive, or contract keywords in title/desc
-    const contractKeywords=['contract','c2c','c2h','corp-to-corp','corp to corp',
-      'contract-to-hire','w2 contract','/hr','per hour','hourly','contractor'];
     list = list
-      .filter(j=>{
-        const src=(j.source||'').toLowerCase();
-        const title=(j.title||'').toLowerCase();
-        const desc=(j.description||'').toLowerCase();
-        const sal=(j.salary||'').toLowerCase();
-        // Jooble contractor filter guarantees contract jobs
-        if(src.includes('jooble')||src.includes('dice')||src.includes('ziprecruiter')) return true;
-        // Remotive = contract/freelance remote
-        if(j.id&&j.id.startsWith('rm_')) return true;
-        // Check keywords in title, description, or salary
-        return contractKeywords.some(k=>title.includes(k)||desc.includes(k)||sal.includes(k));
-      })
+      .filter(j=>j.isContract)  // structured field: contract_type='contract' OR Jooble/Remotive sourced
       .map(j=>{
         const m=j.salary?j.salary.match(/\$(\d+)K-\$(\d+)K/):null;
         const hrRate=j.hourlyRate||(m?'$'+Math.round(m[1]*1000/2080)+'-$'+Math.round(m[2]*1000/2080)+'/hr':'');
         return{...j,contractType:'Contract',hourlyRate:hrRate};
       });
-    // Show message if Jooble key not set
-    if(!localStorage.getItem('jr_jooble_key')&&list.length===0){
+    // If no contract results — Adzuna doesn't tag US contracts well; Jooble key solves this
+    if(list.length===0){
+      const jKey=localStorage.getItem('jr_jooble_key')||'';
       const jl=el('job-list');
-      if(jl) jl.innerHTML='<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;text-align:center"><div style="font-size:28px;margin-bottom:12px">🔑</div><div style="font-size:15px;font-weight:700;margin-bottom:8px">Add Jooble key for contract positions</div><div style="font-size:12px;color:var(--muted);margin-bottom:16px">Jooble searches Dice, ZipRecruiter, Monster, CareerBuilder for contract roles</div><a href="https://jooble.org/api/about" target="_blank" style="display:inline-block;padding:10px 24px;background:#fbbf24;color:#000;border-radius:8px;font-weight:700;font-size:13px">Get Free Jooble Key →</a></div>';
+      if(jl) jl.innerHTML=`<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px;text-align:center;line-height:1.7">
+        <div style="font-size:28px;margin-bottom:12px">📋</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px">No contract positions found from current sources</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:20px">
+          Adzuna's <code style="background:var(--raised);padding:1px 5px;border-radius:3px">contract_type</code> field is 
+          unreliable for US jobs.<br>${!jKey?'Add your <b>Jooble key</b> (amber field above) — it uses <code style="background:var(--raised);padding:1px 5px;border-radius:3px">employment:contractor</code> filter<br>across Dice, ZipRecruiter, Monster, CareerBuilder.<br><br>':''}
+          Or search directly on these contract-specific boards:
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <a href="https://www.dice.com/jobs?q=databricks+data+engineer&location=Dallas+TX&employmentType=CONTRACTS" target="_blank" style="padding:8px 14px;background:var(--raised);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text)">🎲 Dice Contract</a>
+          <a href="https://www.linkedin.com/jobs/search/?keywords=data+engineer&location=Dallas%2C+TX&f_JT=C" target="_blank" style="padding:8px 14px;background:var(--raised);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text)">💼 LinkedIn Contract</a>
+          <a href="https://www.indeed.com/jobs?q=databricks+data+engineer&l=Dallas%2C+TX&jt=contract" target="_blank" style="padding:8px 14px;background:var(--raised);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text)">🔍 Indeed Contract</a>
+          <a href="https://www.ziprecruiter.com/jobs-search?search=data+engineer+contract&location=Dallas%2C+TX&employment_type=C" target="_blank" style="padding:8px 14px;background:var(--raised);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text)">⚡ ZipRecruiter</a>
+        </div>
+      </div>`;
       showResultsUI();
       return;
     }
@@ -1106,15 +1108,12 @@ function mapAdzunaJob(job,mode){
     remote:desc.includes('remote'),databricksFirst:desc.includes('databricks')||(job.title||'').toLowerCase().includes('databricks'),
     hasEquity:false,description:(job.description||'').slice(0,600),
     hourlyRate: (job.salary_min&&job.salary_max) ? '$'+Math.round(job.salary_min/2080)+'-$'+Math.round(job.salary_max/2080)+'/hr' : '',
-    adzunaContractType: job.contract_type||'',
-    adzunaContractTime: job.contract_time||'',
-    isContract: (job.contract_type==='contract')
-      || desc.includes('contract') || desc.includes(' c2c ') || desc.includes(' c2h ')
-      || desc.includes('corp to corp') || desc.includes('corp-to-corp')
-      || desc.includes('contract-to-hire') || desc.includes('w2 contract')
-      || (job.title||'').toLowerCase().includes('contract'),
-    contractType: (job.contract_type==='contract'||mode==='ct') ? 'Contract' : '',
-    duration: mode==='ct' ? 'Contract' : ''};
+    // Adzuna structured fields — set by employer at posting time (same logic as LinkedIn/Dice)
+    adzunaContractType: job.contract_type||'',  // 'contract' or 'permanent'
+    adzunaContractTime: job.contract_time||'',  // 'full_time' or 'part_time'
+    isContract: job.contract_type==='contract', // ONLY use structured field, never text parse
+    contractType: job.contract_type==='contract'?'Contract':'',
+    duration:''};
 }
 function mapJoobleJob(job){
   const desc=(job.snippet||job.title||'').toLowerCase();
@@ -1135,8 +1134,9 @@ function mapJoobleJob(job){
     tags:tags.length?tags:['Data Engineering','Python','SQL'],source:job.source||'Jooble',
     remote:(job.location||'').toLowerCase().includes('remote'),
     databricksFirst:desc.includes('databricks')||(job.title||'').toLowerCase().includes('databricks'),
-    isContract:desc.includes('contract')||desc.includes('c2c')||desc.includes('/hr')||!!hrMatch,
-    hasEquity:false,description:job.snippet||'',contractType:'',duration:''};
+    // Jooble filtered with employment:'contractor' — structured field, guaranteed contract
+    isContract: true,
+    hasEquity:false,description:job.snippet||'',contractType:'Contract',duration:'Contract'};
 }
 function mapRemotiveJob(job){
   const desc=(job.description||'').replace(/<[^>]+>/g,'').toLowerCase();
