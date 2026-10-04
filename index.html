@@ -795,10 +795,11 @@ function renderJobList(){
   if(remoteFilter==='remote') list=list.filter(j=>j.remote);
   else if(remoteFilter==='db') list=list.filter(j=>j.databricksFirst);
   let ordered;
+  let dbJobs = [];
   if(currentMode==='ct'){
     ordered = list;
   } else {
-    const dbJobs = list.filter(j=>j.databricksFirst).sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
+    dbJobs = list.filter(j=>j.databricksFirst).sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
     const otherJobs = list.filter(j=>!j.databricksFirst).sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
     ordered = [...dbJobs,...otherJobs];
   }
