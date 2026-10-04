@@ -603,6 +603,8 @@ function switchPanel(name, btn){
   const panel = el('panel-'+name);
   if(panel) panel.classList.add('active');
   if(btn) btn.classList.add('active');
+  // Re-enable find button whenever switching panels
+  const fb=el('find-btn');if(fb){fb.disabled=false;fb.textContent='Find Jobs';}
   if(name==='salary') buildSalaryPanel();
   if(name==='companies') buildCompaniesPanel();
   if(name==='boards') buildBoardsPanel();
@@ -1887,6 +1889,8 @@ window.onerror=function(msg,src,line,col,err){
   updateStatus();
   buildKanban();
   updateCounts();
+  // Ensure button never stuck disabled
+  const fb=el('find-btn');if(fb){fb.disabled=false;fb.textContent='Find Jobs';}
   // Auto-load cached jobs on open
   setTimeout(()=>{
     const cached = getCache(currentMode);
