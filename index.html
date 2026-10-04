@@ -606,6 +606,9 @@ function setMode(mode){
   hideResultsUI();
   hide('cache-bar');
   hide('new-positions-bar');
+  // CT: only use cache if Jooble key present (old cache = irrelevant Remotive jobs)
+  const jKey=localStorage.getItem('jr_jooble_key')||'';
+  // CT mode: load from cache or search
   // Auto-load cache for this mode
   const cached = getCache(mode);
   if(cached && cached.length){
@@ -629,7 +632,7 @@ function showResultsUI(){
   const fb = el('filters-bar');
   if(fb) fb.style.display='flex';
   const rt = el('results-title');
-  if(rt) rt.textContent = currentMode==='ct' ? 'Contract Roles' : 'Jobs for You';
+  if(rt) rt.textContent = currentMode==='ct' ? 'Contract Roles · Highest Pay First' : 'Jobs for You';
   const rl = el('result-count-label');
   if(rl) rl.textContent = allJobs.length + ' positions found';
 }
@@ -760,18 +763,26 @@ function renderJobList(){
         const hr=j.hourlyRate||(m?'$'+Math.round(m[1]*1000/2080)+'-$'+Math.round(m[2]*1000/2080)+'/hr':'');
         return{...j,contractType:'Contract',hourlyRate:hr};
       });
-    if(list.length===0){
-      const jl=el('job-list');
-      const hasJooble=!!localStorage.getItem('jr_jooble_key');
-      if(jl) jl.innerHTML='<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px;text-align:center"><div style="font-size:28px;margin-bottom:10px">📋</div>'+(hasJooble?'<div style="font-size:14px;font-weight:700;margin-bottom:6px">No contract DE positions matched</div><div style="font-size:12px;color:var(--muted);margin-bottom:16px">Try Force Refresh or search directly:</div>':'<div style="font-size:14px;font-weight:700;margin-bottom:6px">Add Jooble key for contract DE roles</div><div style="font-size:12px;color:var(--muted);margin-bottom:16px">Get free key at <b>jooble.org/api/about</b> — searches Dice, ZipRecruiter, Monster</div>')+'<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><a href="https://www.dice.com/jobs?q=databricks+data+engineer&location=Dallas+TX&employmentType=CONTRACTS" target="_blank" style="padding:8px 14px;background:var(--raised);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text)">🎲 Dice</a><a href="https://www.linkedin.com/jobs/search/?keywords=data+engineer&location=Dallas%2C+TX&f_JT=C" target="_blank" style="padding:8px 14px;background:var(--raised);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text)">💼 LinkedIn</a><a href="https://www.indeed.com/jobs?q=databricks+data+engineer&l=Dallas%2C+TX&jt=contract" target="_blank" style="padding:8px 14px;background:var(--raised);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text)">🔍 Indeed</a><a href="https://www.ziprecruiter.com/jobs-search?search=data+engineer+contract&location=Dallas%2C+TX&employment_type=C" target="_blank" style="padding:8px 14px;background:var(--raised);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text)">⚡ ZipRecruiter</a></div></div>';
-      showResultsUI(); return;
-    }
+    // Sort: 60% highest pay + 40% most recent
+    const getSal=s=>{if(!s)return 0;const m=s.match(/\$(\d+)K/g);return m?parseInt(m[m.length-1])*1000:0;};
+    const maxS=Math.max(...list.map(j=>getSal(j.salary)),1);
+    const maxD=Math.max(...list.map(j=>j.postedScore||30),1);
+    list.sort((a,b)=>{
+      const sa=(getSal(a.salary)/maxS)*0.6+(1-Math.min(a.postedScore||30,maxD)/maxD)*0.4;
+      const sb=(getSal(b.salary)/maxS)*0.6+(1-Math.min(b.postedScore||30,maxD)/maxD)*0.4;
+      return sb-sa;
+    });
   }
   if(remoteFilter==='remote') list=list.filter(j=>j.remote);
   else if(remoteFilter==='db') list=list.filter(j=>j.databricksFirst);
-  const dbJobs = list.filter(j=>j.databricksFirst).sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
-  const otherJobs = list.filter(j=>!j.databricksFirst).sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
-  const ordered = [...dbJobs,...otherJobs];
+  let ordered;
+  if(currentMode==='ct'){
+    ordered = list;
+  } else {
+    const dbJobs = list.filter(j=>j.databricksFirst).sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
+    const otherJobs = list.filter(j=>!j.databricksFirst).sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
+    ordered = [...dbJobs,...otherJobs];
+  }
   const container = el('job-list');
   if(!container) return;
   let html='';
@@ -1004,6 +1015,115 @@ function buildBoardsPanel(){
 }
 
 // ── Main search ───────────────────────────────────────────────────────────
+
+// ── C2C / C2H Contract Launcher ──────────────────────────────────────────
+function showContractLauncher(){
+  const jl=el('job-list');
+  if(!jl) return;
+
+  const BOARDS = [
+    {
+      name:'Dice',emoji:'🎲',color:'#e85d04',
+      desc:'Best board for tech contracts — W2/C2C/1099 filter built in · 220+ Databricks contract jobs in Dallas',
+      count:'220+ contracts',
+      links:[
+        {label:'Databricks + Dallas',url:'https://www.dice.com/jobs?q=databricks+data+engineer&adminDistrictCode=TX&countryCode=US&employmentType=CONTRACTS'},
+        {label:'PySpark + Dallas',url:'https://www.dice.com/jobs?q=pyspark+data+engineer&adminDistrictCode=TX&countryCode=US&employmentType=CONTRACTS'},
+        {label:'Remote contract',url:'https://www.dice.com/jobs?q=databricks+data+engineer&workplaceTypes=Remote&countryCode=US&employmentType=CONTRACTS'},
+        {label:'C2C / Third Party',url:'https://www.dice.com/jobs?q=databricks+data+engineer&adminDistrictCode=TX&countryCode=US&employmentType=THIRD_PARTY'},
+      ]
+    },
+    {
+      name:'LinkedIn',emoji:'💼',color:'#0a66c2',
+      desc:'Largest professional network · Contract filter = employmentType:C · DFW Metro search',
+      count:'Filter: f_JT=C',
+      links:[
+        {label:'Data Engineer contract DFW',url:'https://www.linkedin.com/jobs/search/?keywords=data+engineer+databricks&location=Dallas-Fort+Worth+Metroplex&f_JT=C&f_TPR=r604800'},
+        {label:'PySpark contract remote',url:'https://www.linkedin.com/jobs/search/?keywords=pyspark+data+engineer&f_JT=C&f_WT=2'},
+        {label:'C2H (Contract-to-Hire)',url:'https://www.linkedin.com/jobs/search/?keywords=data+engineer+contract+to+hire&location=Dallas-Fort+Worth&f_JT=C'},
+        {label:'Databricks remote contract',url:'https://www.linkedin.com/jobs/search/?keywords=databricks+data+engineer+contract&f_JT=C&f_WT=2'},
+      ]
+    },
+    {
+      name:'Indeed',emoji:'🔍',color:'#2557a7',
+      desc:'Highest volume job board · jt=contract filter · 50mi radius from Dallas',
+      count:'Filter: jt=contract',
+      links:[
+        {label:'Databricks contract Dallas',url:'https://www.indeed.com/jobs?q=databricks+data+engineer&l=Dallas%2C+TX&jt=contract&radius=50&fromage=14'},
+        {label:'PySpark SQL contract',url:'https://www.indeed.com/jobs?q=pyspark+sql+data+engineer&l=Dallas%2C+TX&jt=contract&radius=50'},
+        {label:'Remote contract',url:'https://www.indeed.com/jobs?q=databricks+data+engineer+remote&jt=contract&fromage=14'},
+        {label:'C2C Corp-to-Corp',url:'https://www.indeed.com/jobs?q=%22corp+to+corp%22+OR+%22c2c%22+data+engineer+databricks&l=Dallas%2C+TX'},
+      ]
+    },
+    {
+      name:'ZipRecruiter',emoji:'⚡',color:'#4ade80',
+      desc:'Strong for Dallas contract tech roles · employment_type=C filter',
+      count:'Filter: employment_type=C',
+      links:[
+        {label:'Databricks contract Dallas',url:'https://www.ziprecruiter.com/jobs-search?search=databricks+data+engineer+contract&location=Dallas%2C+TX&employment_type=C'},
+        {label:'PySpark contract',url:'https://www.ziprecruiter.com/jobs-search?search=pyspark+data+engineer+contract&location=Dallas%2C+TX&employment_type=C'},
+        {label:'Remote contract',url:'https://www.ziprecruiter.com/jobs-search?search=databricks+data+engineer&employment_type=C&remote=true'},
+        {label:'C2H Contract-to-Hire',url:'https://www.ziprecruiter.com/jobs-search?search=data+engineer+contract+to+hire&location=Dallas%2C+TX'},
+      ]
+    },
+    {
+      name:'Monster',emoji:'👾',color:'#7c3aed',
+      desc:'Long-standing job board with contract filter · Good for staffing firm postings',
+      count:'Filter: Contract',
+      links:[
+        {label:'Databricks contract Dallas',url:'https://www.monster.com/jobs/search?q=databricks+data+engineer&where=dallas+texas&jt=Contract'},
+        {label:'PySpark contract',url:'https://www.monster.com/jobs/search?q=pyspark+data+engineer+contract&where=dallas+texas'},
+        {label:'Remote contract',url:'https://www.monster.com/jobs/search?q=databricks+data+engineer+contract&where=remote'},
+      ]
+    },
+    {
+      name:'Dice C2C Only',emoji:'🏢',color:'#f59e0b',
+      desc:'Specifically for Corp-to-Corp positions — third party / staffing firm postings',
+      count:'THIRD_PARTY filter',
+      links:[
+        {label:'C2C Dallas all skills',url:'https://www.dice.com/jobs?q=data+engineer&adminDistrictCode=TX&countryCode=US&employmentType=THIRD_PARTY'},
+        {label:'C2C PySpark Databricks',url:'https://www.dice.com/jobs?q=pyspark+databricks+data+engineer&countryCode=US&employmentType=THIRD_PARTY'},
+        {label:'C2C Azure remote',url:'https://www.dice.com/jobs?q=azure+data+engineer&workplaceTypes=Remote&countryCode=US&employmentType=THIRD_PARTY'},
+      ]
+    },
+  ];
+
+  const html = BOARDS.map(b=>`
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:10px;transition:border-color .15s"
+      onmouseover="this.style.borderColor='${b.color}33'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:20px">${b.emoji}</span>
+        <div>
+          <div style="font-size:14px;font-weight:800;color:var(--text)">${b.name}</div>
+          <div style="font-size:10px;color:var(--muted)">${b.desc}</div>
+        </div>
+        <span style="margin-left:auto;font-size:10px;background:${b.color}22;border:1px solid ${b.color}44;color:${b.color};padding:2px 8px;border-radius:20px;font-weight:700;white-space:nowrap">${b.count}</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${b.links.map(l=>`<a href="${l.url}" target="_blank" rel="noopener"
+          style="padding:6px 12px;border-radius:7px;border:1px solid ${b.color}55;background:${b.color}11;
+                 color:${b.color};font-size:11px;font-weight:600;text-decoration:none;transition:all .15s"
+          onmouseover="this.style.background='${b.color}22'" onmouseout="this.style.background='${b.color}11'">
+          ${l.label} →
+        </a>`).join('')}
+      </div>
+    </div>`).join('');
+
+  jl.innerHTML = `
+    <div style="background:rgba(34,211,238,.05);border:1px solid rgba(34,211,238,.15);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--muted)">
+      💡 <b style="color:var(--text)">How these work:</b> Each link opens the job board pre-filtered for <b>Contract/C2C</b> data engineering roles in <b>Dallas DFW + Remote</b>. 
+      Employment type is set at the server side by the job board — same as when you manually click "Contract" filter.
+    </div>
+    ${html}`;
+
+  hide('scan-bar');
+  const rh=el('results-header');
+  if(rh){rh.style.display='flex';document.getElementById('results-title').textContent='Contract Job Boards';document.getElementById('result-count-label').textContent='6 boards · 500+ contract positions';}
+  hide('filters-bar');
+  hide('search-hero');
+  hide('cache-bar');
+}
+
 async function runSearch(forceRefresh=false){
   console.log('runSearch mode='+currentMode+' force='+forceRefresh);
   if(!forceRefresh){
@@ -1024,7 +1144,7 @@ async function runSearch(forceRefresh=false){
   try{
     const raw=[];const seen=new Set();
     // SOURCE 1: Adzuna (real DFW + remote jobs, requires free key)
-    if(azId&&azKey&&currentMode!=='ct'){
+    if(azId&&azKey){
       const AQ={
         de:['databricks data engineer','pyspark data engineer','azure data engineer python'],
         ai:['machine learning data engineer','AI data engineer MLflow python'],
