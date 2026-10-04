@@ -742,12 +742,30 @@ function renderJobList(){
   // CT mode — label all results as Contract + compute hourly rate
   // Filtering happens at query level (Jooble employment:contractor, Adzuna contract queries)
   if(currentMode==='ct'){
-    list = list.map(j=>{
+    const DE_MUST=['data engineer','etl','data platform','pyspark','databricks',
+      'spark engineer','analytics engineer','data pipeline','data integration',
+      'data warehouse','data architect','bi engineer','dataops'];
+    const CT_EXCL=['full stack','fullstack','frontend','front-end','mobile','ios ',
+      'android','devops','security engineer','qa ','data scientist',
+      'machine learning','rails','react developer','php','java developer',
+      '.net developer','product manager','scrum master'];
+    list=list
+      .filter(j=>{
+        const t=(j.title||'').toLowerCase();
+        if(CT_EXCL.some(k=>t.includes(k))) return false;
+        return DE_MUST.some(k=>t.includes(k));
+      })
+      .map(j=>{
         const m=j.salary?j.salary.match(/\$(\d+)K-\$(\d+)K/):null;
-        const hrRate=j.hourlyRate||(m?'$'+Math.round(m[1]*1000/2080)+'-$'+Math.round(m[2]*1000/2080)+'/hr':'');
-        return{...j,contractType:'Contract',hourlyRate:hrRate};
+        const hr=j.hourlyRate||(m?'$'+Math.round(m[1]*1000/2080)+'-$'+Math.round(m[2]*1000/2080)+'/hr':'');
+        return{...j,contractType:'Contract',hourlyRate:hr};
       });
-
+    if(list.length===0){
+      const jl=el('job-list');
+      const hasJooble=!!localStorage.getItem('jr_jooble_key');
+      if(jl) jl.innerHTML='<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px;text-align:center"><div style="font-size:28px;margin-bottom:10px">📋</div>'+(hasJooble?'<div style="font-size:14px;font-weight:700;margin-bottom:6px">No contract DE positions matched</div><div style="font-size:12px;color:var(--muted);margin-bottom:16px">Try Force Refresh or search directly:</div>':'<div style="font-size:14px;font-weight:700;margin-bottom:6px">Add Jooble key for contract DE roles</div><div style="font-size:12px;color:var(--muted);margin-bottom:16px">Get free key at <b>jooble.org/api/about</b> — searches Dice, ZipRecruiter, Monster</div>')+'<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><a href="https://www.dice.com/jobs?q=databricks+data+engineer&location=Dallas+TX&employmentType=CONTRACTS" target="_blank" style="padding:8px 14px;background:var(--raised);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text)">🎲 Dice</a><a href="https://www.linkedin.com/jobs/search/?keywords=data+engineer&location=Dallas%2C+TX&f_JT=C" target="_blank" style="padding:8px 14px;background:var(--raised);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text)">💼 LinkedIn</a><a href="https://www.indeed.com/jobs?q=databricks+data+engineer&l=Dallas%2C+TX&jt=contract" target="_blank" style="padding:8px 14px;background:var(--raised);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text)">🔍 Indeed</a><a href="https://www.ziprecruiter.com/jobs-search?search=data+engineer+contract&location=Dallas%2C+TX&employment_type=C" target="_blank" style="padding:8px 14px;background:var(--raised);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text)">⚡ ZipRecruiter</a></div></div>';
+      showResultsUI(); return;
+    }
   }
   if(remoteFilter==='remote') list=list.filter(j=>j.remote);
   else if(remoteFilter==='db') list=list.filter(j=>j.databricksFirst);
@@ -1006,45 +1024,39 @@ async function runSearch(forceRefresh=false){
   try{
     const raw=[];const seen=new Set();
     // SOURCE 1: Adzuna (real DFW + remote jobs, requires free key)
-    if(azId&&azKey){
+    if(azId&&azKey&&currentMode!=='ct'){
       const AQ={
         de:['databricks data engineer','pyspark data engineer','azure data engineer python'],
         ai:['machine learning data engineer','AI data engineer MLflow python'],
-        ct:['databricks data engineer','pyspark data engineer','azure data engineer python']
       };
-      // Search across DFW key locations + remote in parallel
-      const DFW_LOCATIONS = [
-        {where:'dallas+texas',   dist:50,  label:'Dallas DFW'},
-        {where:'fort+worth+texas',dist:30, label:'Fort Worth'},
-        {where:'plano+texas',    dist:20,  label:'Plano'},
-        {where:'',               dist:0,   label:'Remote US'},  // no where = nationwide
+      const DFW_LOCATIONS=[
+        {where:'dallas+texas',dist:50,label:'Dallas DFW'},
+        {where:'fort+worth+texas',dist:30,label:'Fort Worth'},
+        {where:'plano+texas',dist:20,label:'Plano'},
+        {where:'',dist:0,label:'Remote US'},
       ];
-      const queries = AQ[currentMode]||AQ.de;
-      const adzunaFetches = [];
-      for(const q of queries.slice(0,2)){           // 2 queries × 4 locations = 8 calls
+      const queries=(AQ[currentMode]||AQ.de).slice(0,2);
+      const adzunaFetches=[];
+      for(const q of queries){
         for(const loc of DFW_LOCATIONS){
-          const whereParam = loc.where ? '&where='+loc.where+'&distance='+loc.dist : '&where=remote';
-          const ctParam = currentMode==='ct' ? '&contract_type=contract' : '';
+          const whereParam=loc.where?'&where='+loc.where+'&distance='+loc.dist:'&where=remote';
           const url='https://api.adzuna.com/v1/api/jobs/us/search/1?app_id='+azId+'&app_key='+azKey
-            +'&what='+encodeURIComponent(q)+whereParam+ctParam+'&results_per_page=8&sort_by=date&content-type=application/json';
+            +'&what='+encodeURIComponent(q)+whereParam+'&results_per_page=8&sort_by=date&content-type=application/json';
           adzunaFetches.push(
             fetch(url)
               .then(r=>{if(r.status===401||r.status===403)throw new Error('Invalid Adzuna keys');return r.json();})
               .then(j=>{console.log('Adzuna ['+q+'] '+loc.label+':',(j.results||[]).length);return j.results||[];})
-              .catch(e=>{if(e.message.includes('Adzuna'))throw e;console.warn('Adzuna fetch:',e.message);return [];})
+              .catch(e=>{if(e.message.includes('Adzuna'))throw e;console.warn('Adzuna:',e.message);return[];})
           );
         }
       }
-      const allResults = await Promise.all(adzunaFetches);
-      allResults.flat().forEach(j=>{
-        const id='az_'+j.id;
-        if(!seen.has(id)){seen.add(id);raw.push(mapAdzunaJob(j,currentMode));}
-      });
-      console.log('Adzuna total unique jobs:',raw.length);
+      const allResults=await Promise.all(adzunaFetches);
+      allResults.flat().forEach(j=>{const id='az_'+j.id;if(!seen.has(id)){seen.add(id);raw.push(mapAdzunaJob(j,currentMode));}});
+      console.log('Adzuna total unique:',raw.length);
     }
-    // SOURCE 2: Remotive (free, no key, remote data engineering jobs)
-    try{
-      const RQ={de:'data+engineer',ai:'machine+learning+engineer',ct:'data+engineer'};
+        // SOURCE 2: Remotive — skip for CT mode (returns full-time jobs)
+    if(currentMode!=='ct') try{
+      const RQ={de:'data+engineer',ai:'machine+learning+engineer'};
       const rr=await fetch('https://remotive.com/api/remote-jobs?category=data&search='+(RQ[currentMode]||'data+engineer')+'&limit=15');
       const rj=await rr.json();
       console.log('Remotive:',(rj.jobs||[]).length);
