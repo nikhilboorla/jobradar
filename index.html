@@ -738,12 +738,10 @@ function isDataEngineeringRole(job){
 
 function renderJobList(){
   let list = [...allJobs].filter(isDataEngineeringRole);  // always filter irrelevant roles
-  // CT mode — filter using structured employment_type field ONLY
-  // (same logic as LinkedIn f_JT=C, Dice CONTRACTS:true, Indeed jt=contract)
+  // CT mode — label all results as Contract + compute hourly rate
+  // Filtering happens at query level (Jooble employment:contractor, Adzuna contract queries)
   if(currentMode==='ct'){
-    list = list
-      .filter(j=>j.isContract)  // structured field: contract_type='contract' OR Jooble/Remotive sourced
-      .map(j=>{
+    list = list.map(j=>{
         const m=j.salary?j.salary.match(/\$(\d+)K-\$(\d+)K/):null;
         const hrRate=j.hourlyRate||(m?'$'+Math.round(m[1]*1000/2080)+'-$'+Math.round(m[2]*1000/2080)+'/hr':'');
         return{...j,contractType:'Contract',hourlyRate:hrRate};
