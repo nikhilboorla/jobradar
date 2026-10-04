@@ -179,7 +179,7 @@ button{cursor:pointer;font-family:inherit}a{text-decoration:none}
         </div>
         <div style="margin-bottom:12px;background:#0a0a0a;border:1px solid #3f3f46;border-radius:10px;padding:12px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div style="font-size:10px;color:#22d3ee;font-weight:700;letter-spacing:.5px">ADZUNA — free DFW + remote jobs (Indeed · Monster · LinkedIn)</div>
+            <div style="font-size:10px;color:#22d3ee;font-weight:700;letter-spacing:.5px">ADZUNA — DFW + Remote jobs</div>
             <a href="https://developer.adzuna.com/signup" target="_blank" style="font-size:10px;color:#22d3ee;border:1px solid #3f3f46;padding:3px 8px;border-radius:5px;font-weight:600">Get Free Keys →</a>
           </div>
           <div style="display:flex;gap:6px;margin-bottom:6px">
@@ -187,6 +187,16 @@ button{cursor:pointer;font-family:inherit}a{text-decoration:none}
             <input id="adzuna-api-key" type="password" placeholder="Adzuna API Key" oninput="saveAdzunaKeys()" style="flex:1;background:#141417;border:1px solid #3f3f46;border-radius:7px;color:#22d3ee;font-size:11px;padding:6px 10px;outline:none;font-family:'SF Mono',monospace">
           </div>
           <div id="adzuna-status" style="font-size:10px;color:#71717a">No key — shows Remotive remote jobs only</div>
+        </div>
+        <div style="margin-bottom:12px;background:#0a0a0a;border:1px solid #1e3a5f;border-radius:10px;padding:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-size:10px;color:#60a5fa;font-weight:700;letter-spacing:.5px">SERPER.DEV — LinkedIn · Indeed · ZipRecruiter · Glassdoor · Monster via Google Jobs</div>
+            <a href="https://serper.dev" target="_blank" style="font-size:10px;color:#60a5fa;border:1px solid #1e3a5f;padding:3px 8px;border-radius:5px;font-weight:600">2,500 Free →</a>
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <input id="serper-key" type="password" placeholder="Serper API key (2,500 free searches at serper.dev)" oninput="saveSerperKey()" style="flex:1;background:#141417;border:1px solid #1e3a5f;border-radius:7px;color:#60a5fa;font-size:11px;padding:6px 10px;outline:none;font-family:'SF Mono',monospace">
+          </div>
+          <div id="serper-status" style="font-size:10px;color:#71717a">No key — add for LinkedIn · Indeed · ZipRecruiter · Glassdoor results</div>
         </div>
         <div id="adzuna-key-section" style="margin-bottom:12px;background:#0a0a0a;border:1px solid #52400e;border-radius:10px;padding:12px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -514,6 +524,21 @@ function hide(id){ const e=el(id); if(e) e.style.display='none'; }
 
 // ── API key ───────────────────────────────────────────────────────────────
 function saveRapidKey(val){}
+function saveSerperKey(){
+  const key=(el('serper-key')||{}).value||'';
+  localStorage.setItem('jr_serper_key',key.trim());
+  const st=el('serper-status');
+  if(st){
+    if(key.trim().length>5){
+      st.textContent='✅ Serper key saved — LinkedIn · Indeed · ZipRecruiter · Glassdoor now active';
+      st.style.color='#4ade80';
+    } else {
+      st.textContent='No key — add for LinkedIn · Indeed · ZipRecruiter · Glassdoor results';
+      st.style.color='#71717a';
+    }
+  }
+  updateStatus();
+}
 function saveJoobleKey(){
   const key=(el('jooble-key')||{}).value||'';
   localStorage.setItem('jr_jooble_key',key.trim());
@@ -558,6 +583,8 @@ function saveRapidKey(val){
 function updateStatus(){
   if(!localStorage.getItem('jr_proxy')) localStorage.setItem('jr_proxy', PROXY);
   const ant=localStorage.getItem('jr_api_key')||'';
+  const serperKey=localStorage.getItem('jr_serper_key')||'';
+  if(serperKey){const sf=el('serper-key');if(sf){sf.value=serperKey;const ss=el('serper-status');if(ss){ss.textContent='✅ Serper key saved — LinkedIn · Indeed · ZipRecruiter · Glassdoor active';ss.style.color='#4ade80';}}}
   const jKey=localStorage.getItem('jr_jooble_key')||'';
   if(jKey){const f=el('jooble-key');if(f){f.value=jKey;const st=el('jooble-status');if(st){st.textContent='✅ Jooble key saved';st.style.color='#4ade80';}}}
   const azId=localStorage.getItem('jr_adzuna_id')||'';
@@ -607,6 +634,8 @@ function setMode(mode){
   hide('cache-bar');
   hide('new-positions-bar');
   // CT: only use cache if Jooble key present (old cache = irrelevant Remotive jobs)
+  const serperKey=localStorage.getItem('jr_serper_key')||'';
+  if(serperKey){const sf=el('serper-key');if(sf){sf.value=serperKey;const ss=el('serper-status');if(ss){ss.textContent='✅ Serper key saved — LinkedIn · Indeed · ZipRecruiter · Glassdoor active';ss.style.color='#4ade80';}}}
   const jKey=localStorage.getItem('jr_jooble_key')||'';
   // CT mode: load from cache or search
   // Auto-load cache for this mode
@@ -745,24 +774,12 @@ function renderJobList(){
   // CT mode — label all results as Contract + compute hourly rate
   // Filtering happens at query level (Jooble employment:contractor, Adzuna contract queries)
   if(currentMode==='ct'){
-    const DE_MUST=['data engineer','etl','data platform','pyspark','databricks',
-      'spark engineer','analytics engineer','data pipeline','data integration',
-      'data warehouse','data architect','bi engineer','dataops'];
-    const CT_EXCL=['full stack','fullstack','frontend','front-end','mobile','ios ',
-      'android','devops','security engineer','qa ','data scientist',
-      'machine learning','rails','react developer','php','java developer',
-      '.net developer','product manager','scrum master'];
-    list=list
-      .filter(j=>{
-        const t=(j.title||'').toLowerCase();
-        if(CT_EXCL.some(k=>t.includes(k))) return false;
-        return DE_MUST.some(k=>t.includes(k));
-      })
-      .map(j=>{
-        const m=j.salary?j.salary.match(/\$(\d+)K-\$(\d+)K/):null;
-        const hr=j.hourlyRate||(m?'$'+Math.round(m[1]*1000/2080)+'-$'+Math.round(m[2]*1000/2080)+'/hr':'');
-        return{...j,contractType:'Contract',hourlyRate:hr};
-      });
+    // Add contract badge + hourly rate to all jobs
+    list = list.map(j=>{
+      const m=j.salary?j.salary.match(/\$(\d+)K-\$(\d+)K/):null;
+      const hr=j.hourlyRate||(m?'$'+Math.round(m[1]*1000/2080)+'-$'+Math.round(m[2]*1000/2080)+'/hr':'');
+      return{...j,contractType:'Contract',hourlyRate:hr};
+    });
     // Sort: 60% highest pay + 40% most recent
     const getSal=s=>{if(!s)return 0;const m=s.match(/\$(\d+)K/g);return m?parseInt(m[m.length-1])*1000:0;};
     const maxS=Math.max(...list.map(j=>getSal(j.salary)),1);
@@ -1017,6 +1034,19 @@ function buildBoardsPanel(){
 // ── Main search ───────────────────────────────────────────────────────────
 
 // ── C2C / C2H Contract Launcher ──────────────────────────────────────────
+function parseDaysAgo(str){
+  if(!str) return 7;
+  const s=str.toLowerCase();
+  if(s.includes('hour')||s.includes('just')||s.includes('today')) return 0;
+  if(s.includes('yesterday')) return 1;
+  const m=s.match(/(\d+)\s*day/);
+  if(m) return parseInt(m[1]);
+  const w=s.match(/(\d+)\s*week/);
+  if(w) return parseInt(w[1])*7;
+  const mo=s.match(/(\d+)\s*month/);
+  if(mo) return parseInt(mo[1])*30;
+  return 7;
+}
 function showContractLauncher(){
   const jl=el('job-list');
   if(!jl) return;
@@ -1137,64 +1167,277 @@ async function runSearch(forceRefresh=false){
   const steps=SCAN_STEPS[currentMode]||SCAN_STEPS.de;
   let si=0;
   const sint=setInterval(()=>{si=(si+1)%steps.length;const ss=el('scan-src');if(ss)ss.textContent=steps[si].icon+' '+steps[si].src;},1800);
-  const jKey=localStorage.getItem('jr_jooble_key')||'';
-  if(jKey){const f=el('jooble-key');if(f){f.value=jKey;const st=el('jooble-status');if(st){st.textContent='✅ Jooble key saved';st.style.color='#4ade80';}}}
-  const azId=localStorage.getItem('jr_adzuna_id')||'';
-  const azKey=localStorage.getItem('jr_adzuna_key')||'';
+  const azId  = localStorage.getItem('jr_adzuna_id')||'';
+  const azKey = localStorage.getItem('jr_adzuna_key')||'';
+  const jKey  = localStorage.getItem('jr_jooble_key')||'';
   try{
-    const raw=[];const seen=new Set();
-    // SOURCE 1: Adzuna (real DFW + remote jobs, requires free key)
+    const raw=[]; const seen=new Set();
+
+    // ── SOURCE 1: Adzuna — DFW + Remote (all modes) ─────────────────────
     if(azId&&azKey){
       const AQ={
         de:['databricks data engineer','pyspark data engineer','azure data engineer python'],
         ai:['machine learning data engineer','AI data engineer MLflow python'],
+        ct:['data engineer contract dallas','pyspark databricks data engineer contract','azure data engineer contract remote']
       };
-      const DFW_LOCATIONS=[
-        {where:'dallas+texas',dist:50,label:'Dallas DFW'},
-        {where:'fort+worth+texas',dist:30,label:'Fort Worth'},
-        {where:'plano+texas',dist:20,label:'Plano'},
-        {where:'',dist:0,label:'Remote US'},
+      const LOCS=[
+        {where:'dallas+texas',dist:50},{where:'fort+worth+texas',dist:30},
+        {where:'plano+texas',dist:20},{where:'',dist:0}
       ];
       const queries=(AQ[currentMode]||AQ.de).slice(0,2);
-      const adzunaFetches=[];
+      const fetches=[];
       for(const q of queries){
-        for(const loc of DFW_LOCATIONS){
-          const whereParam=loc.where?'&where='+loc.where+'&distance='+loc.dist:'&where=remote';
-          const url='https://api.adzuna.com/v1/api/jobs/us/search/1?app_id='+azId+'&app_key='+azKey
-            +'&what='+encodeURIComponent(q)+whereParam+'&results_per_page=8&sort_by=date&content-type=application/json';
-          adzunaFetches.push(
-            fetch(url)
+        for(const loc of LOCS){
+          const wp=loc.where?'&where='+loc.where+'&distance='+loc.dist:'&where=remote';
+          fetches.push(
+            fetch('https://api.adzuna.com/v1/api/jobs/us/search/1?app_id='+azId+'&app_key='+azKey
+              +'&what='+encodeURIComponent(q)+wp+'&results_per_page=8&sort_by=date&content-type=application/json')
               .then(r=>{if(r.status===401||r.status===403)throw new Error('Invalid Adzuna keys');return r.json();})
-              .then(j=>{console.log('Adzuna ['+q+'] '+loc.label+':',(j.results||[]).length);return j.results||[];})
-              .catch(e=>{if(e.message.includes('Adzuna'))throw e;console.warn('Adzuna:',e.message);return[];})
+              .then(j=>j.results||[])
+              .catch(e=>{if(e.message.includes('Adzuna'))throw e;return[];})
           );
         }
       }
-      const allResults=await Promise.all(adzunaFetches);
-      allResults.flat().forEach(j=>{const id='az_'+j.id;if(!seen.has(id)){seen.add(id);raw.push(mapAdzunaJob(j,currentMode));}});
-      console.log('Adzuna total unique:',raw.length);
+      (await Promise.all(fetches)).flat().forEach(j=>{
+        const id='az_'+j.id;
+        if(!seen.has(id)){seen.add(id);raw.push(mapAdzunaJob(j,currentMode));}
+      });
+      console.log('Adzuna:',raw.length,'jobs');
     }
-        // SOURCE 2: Remotive — skip for CT mode (returns full-time jobs)
-    if(currentMode!=='ct') try{
-      const RQ={de:'data+engineer',ai:'machine+learning+engineer'};
+
+    // ── SOURCE 2: Remotive — remote tech jobs (all modes) ───────────────
+    try{
+      const RQ={de:'data+engineer',ai:'machine+learning+engineer',ct:'data+engineer+contract'};
       const rr=await fetch('https://remotive.com/api/remote-jobs?category=data&search='+(RQ[currentMode]||'data+engineer')+'&limit=15');
       const rj=await rr.json();
-      console.log('Remotive:',(rj.jobs||[]).length);
+      console.log('Remotive:',(rj.jobs||[]).length,'jobs');
       (rj.jobs||[]).forEach(j=>{const id='rm_'+j.id;if(!seen.has(id)){seen.add(id);raw.push(mapRemotiveJob(j));}});
     }catch(e){console.warn('Remotive:',e.message);}
+
+    // ── SOURCE 3: Jooble — 140+ boards (Dice, ZipRecruiter, Monster, CareerBuilder) ──
+    if(jKey){
+      const JQ={
+        de:'databricks pyspark data engineer',
+        ai:'machine learning data engineer python',
+        ct:'pyspark sql data engineer'
+      };
+      const JLOCS=currentMode==='ct'
+        ?['Dallas, TX','Fort Worth, TX','Plano, TX','Irving, TX','Remote','']
+        :['Dallas, TX','Remote',''];
+      const jFetches=JLOCS.map(loc=>
+        fetch('https://jooble.org/api/'+jKey,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            keywords:JQ[currentMode]||JQ.de,
+            location:loc,
+            employment:currentMode==='ct'?'contractor':'',
+            radius:'50',page:1
+          })
+        }).then(r=>r.json()).catch(()=>({jobs:[]}))
+      );
+      const jResults=await Promise.all(jFetches);
+      let jCount=0;
+      jResults.forEach(r=>(r.jobs||[]).forEach(j=>{
+        const id='jb_'+j.id;
+        if(!seen.has(id)){seen.add(id);raw.push(mapJoobleJob(j));jCount++;}
+      }));
+      console.log('Jooble:',jCount,'jobs across',JLOCS.length,'locations');
+    }
+
+    // ── SOURCE 4: Arbeitnow — free, no key, 50+ boards ──────────────────
+    try{
+      const ArbQ={de:'data-engineer',ai:'machine-learning-engineer',ct:'data-engineer'};
+      const ar=await fetch('https://www.arbeitnow.com/api/job-board-api?search='+(ArbQ[currentMode]||'data-engineer')+'&page=1');
+      const aj=await ar.json();
+      console.log('Arbeitnow:',(aj.data||[]).length,'jobs');
+      (aj.data||[]).forEach(j=>{
+        const id='ab_'+j.slug;
+        if(!seen.has(id)){
+          seen.add(id);
+          const desc=(j.description||'').replace(/<[^>]+>/g,'').toLowerCase();
+          const TAGS=['Databricks','PySpark','Python','SQL','Snowflake','dbt','Kafka','Azure','AWS','GCP','Spark'];
+          raw.push({
+            id:'ab_'+j.slug,title:j.title||'Data Engineer',company:j.company_name||'Company',
+            location:j.location||'Remote',salary:'',hourlyRate:'',
+            postedRaw:j.created_at?Math.floor((Date.now()-new Date(j.created_at*1000))/(864e5))+' days ago':'Recently',
+            postedScore:j.created_at?Math.floor((Date.now()-new Date(j.created_at*1000))/(864e5)):7,
+            sponsorship:'Check posting',applyUrl:j.url||'',
+            tags:TAGS.filter(t=>desc.includes(t.toLowerCase())).slice(0,6),
+            source:'Arbeitnow',remote:j.remote||false,
+            databricksFirst:desc.includes('databricks'),
+            isContract:j.job_types&&j.job_types.includes('contract'),
+            hasEquity:false,description:desc.slice(0,400),contractType:'',duration:''
+          });
+        }
+      });
+    }catch(e){console.warn('Arbeitnow:',e.message);}
+
+    // ── SOURCE 5: Serper.dev — Google Jobs (LinkedIn · Indeed · ZipRecruiter · Glassdoor · Monster) ──
+    const serpKey=localStorage.getItem('jr_serper_key')||'';
+    if(serpKey){
+      const SERP_Q={
+        de:['databricks data engineer dallas texas','pyspark data engineer DFW remote','azure data engineer dallas'],
+        ai:['ML data engineer databricks dallas','machine learning data engineer python remote'],
+        ct:['data engineer contract dallas texas','pyspark data engineer contract remote','databricks data engineer C2C C2H']
+      };
+      const serpQueries=SERP_Q[currentMode]||SERP_Q.de;
+      try{
+        const serpFetches=serpQueries.map(q=>
+          fetch('https://google.serper.dev/jobs',{
+            method:'POST',
+            headers:{'X-API-KEY':serpKey,'Content-Type':'application/json'},
+            body:JSON.stringify({q:q,gl:'us',hl:'en',num:10})
+          }).then(r=>r.json()).catch(()=>({jobs:[]}))
+        );
+        const serpResults=await Promise.all(serpFetches);
+        let serpCount=0;
+        serpResults.forEach(r=>(r.jobs||[]).forEach(j=>{
+          const id='sp_'+(j.jobId||j.title+j.companyName).replace(/\s/g,'');
+          if(!seen.has(id)){
+            seen.add(id);
+            serpCount++;
+            const desc=(j.description||'').toLowerCase();
+            const TAGS=['Databricks','PySpark','Python','SQL','Snowflake','dbt','Kafka','Azure','AWS','GCP','Spark','MLflow','Airflow'];
+            const tags=TAGS.filter(t=>desc.includes(t.toLowerCase())).slice(0,6);
+            const days=j.date?parseDaysAgo(j.date):7;
+            const src=(j.via||'Google Jobs').replace('via ','');
+            // Parse salary from Serper
+            let salary='',hourlyRate='';
+            if(j.salary){
+              const hrM=j.salary.match(/\$(\d+)[-–]?\$?(\d+)?.*hour/i);
+              const yrM=j.salary.match(/\$(\d+)[Kk][-–]\$(\d+)[Kk]/)||j.salary.match(/\$(\d+,?\d+)[-–]\$(\d+,?\d+)/);
+              if(hrM){hourlyRate='$'+hrM[1]+(hrM[2]?'-$'+hrM[2]:'')+'/hr';salary=j.salary;}
+              else if(yrM){salary=j.salary;const b=parseInt(yrM[1].replace(',',''));const t=parseInt(yrM[2].replace(',',''));hourlyRate='$'+Math.round(b/2080)+'-$'+Math.round(t/2080)+'/hr';}
+              else{salary=j.salary;}
+            }
+            raw.push({
+              id,title:j.title||'Data Engineer',company:j.companyName||'Company',
+              location:j.location||'Dallas, TX',salary,hourlyRate,
+              postedRaw:j.date||'Recently',postedScore:days,
+              sponsorship:'Check posting',
+              applyUrl:j.applyOptions&&j.applyOptions[0]?j.applyOptions[0].link:(j.link||''),
+              tags:tags.length?tags:['Data Engineering','Python','SQL'],
+              source:src,remote:(j.location||'').toLowerCase().includes('remote'),
+              databricksFirst:desc.includes('databricks')||(j.title||'').toLowerCase().includes('databricks'),
+              isContract:j.employmentType==='CONTRACTOR'||desc.includes('contract')||desc.includes('c2c'),
+              hasEquity:false,description:desc.slice(0,500),
+              contractType:j.employmentType==='CONTRACTOR'?'Contract':'',duration:''
+            });
+          }
+        }));
+        console.log('Serper (Google Jobs):',serpCount,'jobs from LinkedIn/Indeed/ZipRecruiter/Glassdoor');
+      }catch(e){console.warn('Serper:',e.message);}
+    }
+
+    // ── SOURCE 6: RemoteOK — free, no key, remote tech jobs ─────────────
+    try{
+      const rok=await fetch('https://remoteok.com/api?tag=data-engineer&location=anywhere',
+        {headers:{'User-Agent':'JobRadar/1.0 (+https://nikhilboorla.github.io/jobradar)'}});
+      const roj=await rok.json();
+      const rokJobs=(Array.isArray(roj)?roj:[]).filter(j=>j.id&&j.company);
+      console.log('RemoteOK:',rokJobs.length,'jobs');
+      rokJobs.forEach(j=>{
+        const id='rok_'+j.id;
+        if(!seen.has(id)){
+          seen.add(id);
+          const desc=(j.description||'').replace(/<[^>]+>/g,'').toLowerCase();
+          const TAGS=['Databricks','PySpark','Python','SQL','Snowflake','dbt','Kafka','Azure','AWS','Spark','Airflow'];
+          const days=j.date?Math.floor((Date.now()-new Date(j.date))/(864e5)):7;
+          raw.push({
+            id,title:j.position||'Data Engineer',company:j.company||'Company',
+            location:'Remote',salary:j.salary||'',hourlyRate:'',
+            postedRaw:days===0?'Today':days===1?'Yesterday':days+' days ago',
+            postedScore:days,sponsorship:'Check posting',
+            applyUrl:j.url||'https://remoteok.com/remote-jobs/'+j.id,
+            tags:TAGS.filter(t=>desc.includes(t.toLowerCase())).slice(0,6),
+            source:'RemoteOK',remote:true,
+            databricksFirst:desc.includes('databricks'),
+            isContract:false,hasEquity:!!(j.equity),
+            description:desc.slice(0,400),contractType:'',duration:''
+          });
+        }
+      });
+    }catch(e){console.warn('RemoteOK:',e.message);}
+
+    // ── SOURCE 7: The Muse — tech company jobs, free public API ──────────
+    try{
+      const mq=currentMode==='ai'?'machine-learning':'data-engineering';
+      const mr=await fetch('https://www.themuse.com/api/public/jobs?category=Data+Science&page=0&per_page=20&descending=true');
+      const mj=await mr.json();
+      console.log('The Muse:',(mj.results||[]).length,'jobs');
+      (mj.results||[]).forEach(j=>{
+        const id='mu_'+j.id;
+        if(!seen.has(id)){
+          seen.add(id);
+          const title=(j.name||'').toLowerCase();
+          const desc=(j.contents||'').replace(/<[^>]+>/g,'').toLowerCase();
+          const locs=j.locations&&j.locations.length?j.locations[0].name:'Remote';
+          const days=j.publication_date?Math.floor((Date.now()-new Date(j.publication_date))/(864e5)):7;
+          const TAGS=['Databricks','PySpark','Python','SQL','Snowflake','dbt','Kafka','Azure','AWS','Spark'];
+          raw.push({
+            id,title:j.name||'Data Engineer',company:(j.company&&j.company.name)||'Company',
+            location:locs,salary:'',hourlyRate:'',
+            postedRaw:days===0?'Today':days===1?'Yesterday':days+' days ago',
+            postedScore:days,sponsorship:'Check posting',
+            applyUrl:j.refs&&j.refs.landing_page?j.refs.landing_page:'',
+            tags:TAGS.filter(t=>desc.includes(t.toLowerCase())).slice(0,6),
+            source:'The Muse',remote:locs.toLowerCase().includes('remote'),
+            databricksFirst:desc.includes('databricks'),
+            isContract:false,hasEquity:false,
+            description:desc.slice(0,400),contractType:'',duration:''
+          });
+        }
+      });
+    }catch(e){console.warn('The Muse:',e.message);}
+
+    // ── SOURCE 8: Findwork — developer jobs, free, no key ────────────────
+    try{
+      const fq=currentMode==='ct'?'data engineer contract':currentMode==='ai'?'machine learning engineer':'data engineer';
+      const fr=await fetch('https://findwork.dev/api/jobs/?search='+encodeURIComponent(fq)+'&sort_by=date&order_by=desc');
+      const fj=await fr.json();
+      console.log('Findwork:',(fj.results||[]).length,'jobs');
+      (fj.results||[]).forEach(j=>{
+        const id='fw_'+j.id;
+        if(!seen.has(id)){
+          seen.add(id);
+          const desc=(j.text||'').toLowerCase();
+          const days=j.date_posted?Math.floor((Date.now()-new Date(j.date_posted))/(864e5)):7;
+          const TAGS=['Databricks','PySpark','Python','SQL','Snowflake','dbt','Kafka','Azure','AWS','Spark'];
+          raw.push({
+            id,title:j.role||'Data Engineer',company:j.company_name||'Company',
+            location:j.location||'Remote',salary:'',hourlyRate:'',
+            postedRaw:days===0?'Today':days===1?'Yesterday':days+' days ago',
+            postedScore:days,sponsorship:'Check posting',
+            applyUrl:j.url||'',
+            tags:(j.keywords||[]).filter(t=>TAGS.includes(t)).slice(0,6),
+            source:'Findwork',remote:j.remote||false,
+            databricksFirst:(j.keywords||[]).includes('Databricks')||desc.includes('databricks'),
+            isContract:false,hasEquity:false,
+            description:desc.slice(0,400),contractType:'',duration:''
+          });
+        }
+      });
+    }catch(e){console.warn('Findwork:',e.message);}
+
     clearInterval(sint);
-    if(!raw.length)throw new Error('No jobs found. '+(azId?'Check Adzuna keys at developer.adzuna.com':'Add free Adzuna keys above for DFW jobs, or check internet connection.'));
+    if(!raw.length) throw new Error('No jobs found. Check your Adzuna keys or internet connection.');
     allJobs=raw.sort((a,b)=>(a.postedScore||30)-(b.postedScore||30));
     const existing=getCache(currentMode)||[];
     const existKeys=new Set(existing.map(j=>(j.company+'|'+j.title).toLowerCase()));
     const newPos=allJobs.filter(j=>!existKeys.has((j.company+'|'+j.title).toLowerCase()));
-    setCache(currentMode,allJobs);renderJobList();
-    if(newPos.length>0&&existing.length>0){const nb=el('new-positions-bar');if(nb){nb.textContent='✨ '+newPos.length+' new position'+(newPos.length>1?'s':'')+' found';nb.style.display='block';}}
+    setCache(currentMode,allJobs);
+    renderJobList();
+    if(newPos.length>0&&existing.length>0){
+      const nb=el('new-positions-bar');
+      if(nb){nb.textContent='✨ '+newPos.length+' new position'+(newPos.length>1?'s':'')+' found';nb.style.display='block';}
+    }
   }catch(e){
     clearInterval(sint);
     if(sb)sb.style.display='none';
     if(el('search-hero'))el('search-hero').style.display='block';
-    const eb=el('err-bar');if(eb){eb.textContent='⚠️ '+e.message;eb.style.display='block';setTimeout(()=>eb.style.display='none',10000);}
+    const eb=el('err-bar');
+    if(eb){eb.textContent='⚠️ '+e.message;eb.style.display='block';setTimeout(()=>eb.style.display='none',10000);}
     console.error('runSearch error:',e);
   }finally{
     clearInterval(sint);
@@ -1202,6 +1445,8 @@ async function runSearch(forceRefresh=false){
     if(btn){btn.disabled=false;btn.textContent='Find Jobs';}
   }
 }
+
+
 function mapAdzunaJob(job,mode){
   const desc=(job.description||'').toLowerCase();
   const TAGS=['Databricks','PySpark','Delta Lake','Python','SQL','Snowflake','dbt','Kafka','Airflow','Azure','AWS','GCP','Spark','MLflow'];
@@ -1262,6 +1507,8 @@ function mapRemotiveJob(job){
     hasEquity:false,description:desc.slice(0,600),hourlyRate:'',contractType:''};
 }
 async function testRapidAPI(){
+  const serperKey=localStorage.getItem('jr_serper_key')||'';
+  if(serperKey){const sf=el('serper-key');if(sf){sf.value=serperKey;const ss=el('serper-status');if(ss){ss.textContent='✅ Serper key saved — LinkedIn · Indeed · ZipRecruiter · Glassdoor active';ss.style.color='#4ade80';}}}
   const jKey=localStorage.getItem('jr_jooble_key')||'';
   if(jKey){const f=el('jooble-key');if(f){f.value=jKey;const st=el('jooble-status');if(st){st.textContent='✅ Jooble key saved';st.style.color='#4ade80';}}}
   const azId=localStorage.getItem('jr_adzuna_id')||'';
@@ -1628,6 +1875,8 @@ window.onerror=function(msg,src,line,col,err){
   const key = localStorage.getItem('jr_api_key');
   const keyInput = el('api-key-input');
   if(key && keyInput) keyInput.value=key;
+  const serperKey=localStorage.getItem('jr_serper_key')||'';
+  if(serperKey){const sf=el('serper-key');if(sf){sf.value=serperKey;const ss=el('serper-status');if(ss){ss.textContent='✅ Serper key saved — LinkedIn · Indeed · ZipRecruiter · Glassdoor active';ss.style.color='#4ade80';}}}
   const jKey=localStorage.getItem('jr_jooble_key')||'';
   if(jKey){const f=el('jooble-key');if(f){f.value=jKey;const st=el('jooble-status');if(st){st.textContent='✅ Jooble key saved';st.style.color='#4ade80';}}}
   const azId=localStorage.getItem('jr_adzuna_id')||'';
