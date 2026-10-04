@@ -737,7 +737,8 @@ function isDataEngineeringRole(job){
 }
 
 function renderJobList(){
-  let list = [...allJobs].filter(isDataEngineeringRole);  // always filter irrelevant roles
+  // CT mode: skip title filter — contract queries already target right roles
+  let list = currentMode==='ct' ? [...allJobs] : [...allJobs].filter(isDataEngineeringRole);
   // CT mode — label all results as Contract + compute hourly rate
   // Filtering happens at query level (Jooble employment:contractor, Adzuna contract queries)
   if(currentMode==='ct'){
@@ -746,28 +747,7 @@ function renderJobList(){
         const hrRate=j.hourlyRate||(m?'$'+Math.round(m[1]*1000/2080)+'-$'+Math.round(m[2]*1000/2080)+'/hr':'');
         return{...j,contractType:'Contract',hourlyRate:hrRate};
       });
-    // If no contract results — Adzuna doesn't tag US contracts well; Jooble key solves this
-    if(list.length===0){
-      const jKey=localStorage.getItem('jr_jooble_key')||'';
-      const jl=el('job-list');
-      if(jl) jl.innerHTML=`<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px;text-align:center;line-height:1.7">
-        <div style="font-size:28px;margin-bottom:12px">📋</div>
-        <div style="font-size:15px;font-weight:700;margin-bottom:8px">No contract positions found from current sources</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:20px">
-          Adzuna's <code style="background:var(--raised);padding:1px 5px;border-radius:3px">contract_type</code> field is 
-          unreliable for US jobs.<br>${!jKey?'Add your <b>Jooble key</b> (amber field above) — it uses <code style="background:var(--raised);padding:1px 5px;border-radius:3px">employment:contractor</code> filter<br>across Dice, ZipRecruiter, Monster, CareerBuilder.<br><br>':''}
-          Or search directly on these contract-specific boards:
-        </div>
-        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <a href="https://www.dice.com/jobs?q=databricks+data+engineer&location=Dallas+TX&employmentType=CONTRACTS" target="_blank" style="padding:8px 14px;background:var(--raised);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text)">🎲 Dice Contract</a>
-          <a href="https://www.linkedin.com/jobs/search/?keywords=data+engineer&location=Dallas%2C+TX&f_JT=C" target="_blank" style="padding:8px 14px;background:var(--raised);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text)">💼 LinkedIn Contract</a>
-          <a href="https://www.indeed.com/jobs?q=databricks+data+engineer&l=Dallas%2C+TX&jt=contract" target="_blank" style="padding:8px 14px;background:var(--raised);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text)">🔍 Indeed Contract</a>
-          <a href="https://www.ziprecruiter.com/jobs-search?search=data+engineer+contract&location=Dallas%2C+TX&employment_type=C" target="_blank" style="padding:8px 14px;background:var(--raised);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text)">⚡ ZipRecruiter</a>
-        </div>
-      </div>`;
-      showResultsUI();
-      return;
-    }
+
   }
   if(remoteFilter==='remote') list=list.filter(j=>j.remote);
   else if(remoteFilter==='db') list=list.filter(j=>j.databricksFirst);
